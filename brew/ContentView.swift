@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  brew
 //
-//  Created by toño on 02/09/25.
+//  Created by toño on 02/09/25.s
 //
 
 import SwiftUI
@@ -13,7 +13,7 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
-            Text("Hello, world!")
+            Text("this is tab bar")
         }
         .padding()
     }
