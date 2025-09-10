@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		4DC747922E67DDA200C2CC63 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DC747922E67DDA200C2CC63 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = brew.app; path = "/Users/agrm/Documents/bloque/SwiftMod/Reto/brew-app/build/Debug-iphoneos/brew.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,16 +33,7 @@
 			isa = PBXGroup;
 			children = (
 				4DC747942E67DDA200C2CC63 /* brew */,
-				4DC747932E67DDA200C2CC63 /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		4DC747932E67DDA200C2CC63 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4DC747922E67DDA200C2CC63 /* brew.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -95,7 +86,7 @@
 			mainGroup = 4DC747892E67DDA200C2CC63;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 4DC747932E67DDA200C2CC63 /* Products */;
+			productRefGroup = 4DC747892E67DDA200C2CC63;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
