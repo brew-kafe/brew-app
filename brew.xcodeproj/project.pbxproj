@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		4FA2561C2E70E8A6008173A7 /* SwiftLintFramework in Frameworks */ = {isa = PBXBuildFile; productRef = 4FA2561B2E70E8A6008173A7 /* SwiftLintFramework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		4DC747922E67DDA200C2CC63 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FA2561C2E70E8A6008173A7 /* SwiftLintFramework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = brew;
 			packageProductDependencies = (
+				4FA2561B2E70E8A6008173A7 /* SwiftLintFramework */,
 			);
 			productName = brew;
 			productReference = 4DC747922E67DDA200C2CC63 /* brew.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 4DC747892E67DDA200C2CC63;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4FA2561A2E70E8A6008173A7 /* XCRemoteSwiftPackageReference "SwiftLint" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 4DC747932E67DDA200C2CC63 /* Products */;
 			projectDirPath = "";
@@ -320,6 +329,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4FA2561A2E70E8A6008173A7 /* XCRemoteSwiftPackageReference "SwiftLint" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/SwiftLint";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.61.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4FA2561B2E70E8A6008173A7 /* SwiftLintFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4FA2561A2E70E8A6008173A7 /* XCRemoteSwiftPackageReference "SwiftLint" */;
+			productName = SwiftLintFramework;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4DC7478A2E67DDA200C2CC63 /* Project object */;
 }
