@@ -6,31 +6,25 @@
 //
 
 import SwiftUI
-
-class LocationsViewModel: ObservableObject{
-    @Published var locations: [Location]
-    
-    init() {
-        let locations = LocationsDataService.locations
-        self.locations = locations
-    }
-    
-}
+import MapKit
 
 struct LocationsView: View {
     
-    @StateObject private var vm = LocationsViewModel()
+    @EnvironmentObject private var vm: LocationsViewModel
+    
     
     var body: some View {
-        List{
-            ForEach(vm.locations) {
-                Text($0.name)
-                
-            }
+        ZStack{
+            Map(coordinateRegion: $vm.mapRegion)
+                .ignoresSafeArea()
+            
         }
     }
 }
 
-#Preview {
-    LocationsView()
+struct LocationsView_Previews: PreviewProvider {
+    static var previews: some View{
+        LocationsView()
+            .environmentObject(LocationsViewModel())
+    }
 }

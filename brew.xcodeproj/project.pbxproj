@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		4DC747922E67DDA200C2CC63 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = brew.app; path = "/Users/agrm/Documents/bloque/SwiftMod/Reto/brew-app/build/Debug-iphoneos/brew.app"; sourceTree = "<absolute>"; };
+		829784792E71D1E400AEAD47 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,6 +33,7 @@
 			isa = PBXGroup;
 			children = (
 				4DC747942E67DDA200C2CC63 /* brew */,
+				829784792E71D1E400AEAD47 /* brew.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,7 +59,7 @@
 			packageProductDependencies = (
 			);
 			productName = brew;
-			productReference = 4DC747922E67DDA200C2CC63 /* brew.app */;
+			productReference = 829784792E71D1E400AEAD47 /* brew.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
