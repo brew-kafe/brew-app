@@ -90,9 +90,10 @@ struct CalendarView: View {
             .background(Color(.systemGray6))
             .clipShape(RoundedCorner(radius: 16, corners: [.bottomLeft, .bottomRight]))
         }
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.1), radius:4, x: 0, y: 2)
+        //.shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
         .padding(.horizontal, 20)
+        .shadow(radius: 3)
         
     }
 }
