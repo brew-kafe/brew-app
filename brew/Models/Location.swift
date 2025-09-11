@@ -8,21 +8,38 @@
 import Foundation
 import MapKit
 
-enum PinKind: String, Codable, CaseIterable {
+enum pinKind: String, Codable, CaseIterable {
     case danger, risk, safe
+}
+
+struct plotMetrics: Codable {
+    let sun: Int            // % of useful sunlight
+    let moisture: Int       // % of soil moisture
+    let pestSeverity: Int   // % severity of pest/disease
+    let potassium: String?  // Potassium level
+    let phosphorus: String? // Phosphorus level
+}
+
+struct plotReport: Identifiable, Codable {
+    var id = UUID()
+    let code: String
+    let date: Date
+    let manager: String
+    let file: String?  // file name or PDF URL
 }
 
 struct Location: Identifiable, Equatable {
     let name: String
     let cityName: String
-    //let parcelaRegion???
     let coordinates: CLLocationCoordinate2D
     let description: String
     let imageNames: [String]
     let link: String
-    let kind: PinKind
+    let kind: pinKind
+    let metrics: plotMetrics
+    let reports: [plotReport]
     
-    var id: String{
+    var id: String {
         name + cityName
     }
     
@@ -31,3 +48,4 @@ struct Location: Identifiable, Equatable {
         lhs.id == rhs.id
     }
 }
+

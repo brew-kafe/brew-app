@@ -75,7 +75,7 @@ extension LocationPreviewView{
         Button{
             vm.sheetLocation = location
         } label:{
-            Text("Conocer mas")
+            Text("Conocer")
                 .font(.headline)
                 .frame(width:125, height:35)
         }

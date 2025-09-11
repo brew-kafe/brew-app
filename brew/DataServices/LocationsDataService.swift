@@ -2,74 +2,108 @@
 //  LocationsDataService.swift
 //  MapTest
 //
-//  Created by Nick Sarno on 11/26/21.
+//  Created by AGRM  on 10/09/25.
 //
 
 import Foundation
 import MapKit
 
+
 class LocationsDataService {
-    
+
     static let locations: [Location] = [
         Location(
-            name: "Colosseum",
-            cityName: "Rome",
-            coordinates: CLLocationCoordinate2D(latitude: 41.8902, longitude: 12.4922), //reemplazar con coordinates de un lugar en chiapas
-            description: "The Colosseum is an oval amphitheatre in the centre of the city of Rome, Italy, just east of the Roman Forum. It is the largest ancient amphitheatre ever built, and is still the largest standing amphitheatre in the world today, despite its age.",
+            name: "Parcela 21",
+            cityName: "Chiapas",
+            coordinates: CLLocationCoordinate2D(latitude: 16.7365, longitude: -92.6376),
+            description: "Parcela ubicada en la región de Los Altos de Chiapas. Cultivo de café arábica con sombra natural de árboles locales. Actualmente presenta buena salud general y producción estable.",
             imageNames: [
-                "rome-colosseum-1",
-                "rome-colosseum-2",
-                "rome-colosseum-3",
+                "chiapas-parcela1-1",
+                "chiapas-parcela1-2",
             ],
-            link: "https://en.wikipedia.org/wiki/Colosseum",
-            kind: .danger),
+            link: "https://es.wikipedia.org/wiki/Caf%C3%A9_de_Chiapas",
+            kind: .safe,
+            metrics: .init(sun: 70, moisture: 50, pestSeverity: 12, potassium: "K: Alto", phosphorus: "P: Medio"),
+            reports: [
+                .init(code: "CC27", date: iso("2025-07-28"), manager: "Luis Torres", file: "CC27.pdf"),
+                .init(code: "CC26", date: iso("2025-07-25"), manager: "Luis Torres", file: "CC26.pdf")
+            ]
+        ),
+
         Location(
-            name: "Pantheon",
-            cityName: "Rome",
-            coordinates: CLLocationCoordinate2D(latitude: 41.8986, longitude: 12.4769),
-            description: "The Pantheon is a former Roman temple and since the year 609 a Catholic church, in Rome, Italy, on the site of an earlier temple commissioned by Marcus Agrippa during the reign of Augustus.",
+            name: "Parcela El Mirador",
+            cityName: "Chiapas",
+            coordinates: CLLocationCoordinate2D(latitude: 16.5554, longitude: -92.3125),
+            description: "Terreno con presencia de roya leve en algunas plantas. El productor implementa controles biológicos y monitoreo constante para reducir riesgos.",
             imageNames: [
-                "rome-pantheon-1",
-                "rome-pantheon-2",
-                "rome-pantheon-3",
+                "chiapas-parcela2-1",
+                "chiapas-parcela2-2",
             ],
-            link: "https://en.wikipedia.org/wiki/Pantheon,_Rome",
-            kind: .risk),
+            link: "https://es.wikipedia.org/wiki/Roya_del_cafeto",
+            kind: .risk,
+            metrics: .init(sun: 63, moisture: 58, pestSeverity: 35, potassium: "K: Medio", phosphorus: "P: Bajo"),
+            reports: [
+                .init(code: "RM11", date: iso("2025-08-10"), manager: "Ana Pérez", file: "RM11.pdf")
+            ]
+        ),
+
         Location(
-            name: "Trevi Fountain",
-            cityName: "Rome",
-            coordinates: CLLocationCoordinate2D(latitude: 41.9009, longitude: 12.4833),
-            description: "The Trevi Fountain is a fountain in the Trevi district in Rome, Italy, designed by Italian architect Nicola Salvi and completed by Giuseppe Pannini and several others. Standing 26.3 metres high and 49.15 metres wide, it is the largest Baroque fountain in the city and one of the most famous fountains in the world.",
+            name: "Parcela Santa María",
+            cityName: "Chiapas",
+            coordinates: CLLocationCoordinate2D(latitude: 15.9890, longitude: -92.2510),
+            description: "Zona con humedad excesiva que ha provocado plagas en las raíces. Necesita intervención urgente para evitar pérdidas en la cosecha.",
             imageNames: [
-                "rome-trevifountain-1",
-                "rome-trevifountain-2",
-                "rome-trevifountain-3",
+                "chiapas-parcela3-1",
+                "chiapas-parcela3-2",
             ],
-            link: "https://en.wikipedia.org/wiki/Trevi_Fountain",
-            kind: .safe),
+            link: "https://www.gob.mx/agricultura/",
+            kind: .danger,
+            metrics: .init(sun: 52, moisture: 87, pestSeverity: 68, potassium: "K: Bajo", phosphorus: "P: Bajo"),
+            reports: [
+                .init(code: "SM08", date: iso("2025-08-02"), manager: "Marcos López", file: "SM08.pdf"),
+                .init(code: "SM07", date: iso("2025-07-18"), manager: "Marcos López", file: nil)
+            ]
+        ),
+
         Location(
-            name: "Eiffel Tower",
-            cityName: "Paris",
-            coordinates: CLLocationCoordinate2D(latitude: 48.8584, longitude: 2.2945),
-            description: "The Eiffel Tower is a wrought-iron lattice tower on the Champ de Mars in Paris, France. It is named after the engineer Gustave Eiffel, whose company designed and built the tower. Locally nicknamed 'La dame de fer', it was constructed from 1887 to 1889 as the centerpiece of the 1889 World's Fair and was initially criticized by some of France's leading artists and intellectuals for its design, but it has become a global cultural icon of France and one of the most recognizable structures in the world.",
+            name: "Parcela Las Nubes",
+            cityName: "Chiapas",
+            coordinates: CLLocationCoordinate2D(latitude: 16.2453, longitude: -91.9580),
+            description: "Finca ubicada en la Reserva de la Biósfera El Triunfo. Cultivo sostenible con certificación orgánica, altos niveles de biodiversidad y prácticas de conservación.",
             imageNames: [
-                "paris-eiffeltower-1",
-                "paris-eiffeltower-2",
+                "chiapas-parcela4-1",
+                "chiapas-parcela4-2",
             ],
-            link: "https://en.wikipedia.org/wiki/Eiffel_Tower",
-            kind: .danger),
+            link: "https://www.eltriunfo.org/",
+            kind: .safe,
+            metrics: .init(sun: 66, moisture: 56, pestSeverity: 10, potassium: "K: Medio", phosphorus: "P: Medio"),
+            reports: [
+                .init(code: "LN03", date: iso("2025-07-30"), manager: "Itzel Ruiz", file: "LN03.pdf")
+            ]
+        ),
+
         Location(
-            name: "Louvre Museum",
-            cityName: "Paris",
-            coordinates: CLLocationCoordinate2D(latitude: 48.8606, longitude: 2.3376),
-            description: "The Louvre, or the Louvre Museum, is the world's most-visited museum and a historic monument in Paris, France. It is the home of some of the best-known works of art, including the Mona Lisa and the Venus de Milo. A central landmark of the city, it is located on the Right Bank of the Seine in the city's 1st arrondissement.",
+            name: "Parcela Río Verde",
+            cityName: "Chiapas",
+            coordinates: CLLocationCoordinate2D(latitude: 16.5083, longitude: -92.1042),
+            description: "Parcela cercana a un río, en riesgo de erosión del suelo durante la temporada de lluvias. El productor trabaja en terrazas y barreras vivas.",
             imageNames: [
-                "paris-louvre-1",
-                "paris-louvre-2",
-                "paris-louvre-3",
+                "chiapas-parcela5-1",
+                "chiapas-parcela5-2",
             ],
-            link: "https://en.wikipedia.org/wiki/Louvre",
-            kind: .risk),
+            link: "https://es.wikipedia.org/wiki/Erosi%C3%B3n_del_suelo",
+            kind: .risk,
+            metrics: .init(sun: 74, moisture: 42, pestSeverity: 28, potassium: "K: Alto", phosphorus: "P: Medio"),
+            reports: [
+                .init(code: "RV14", date: iso("2025-08-05"), manager: "Diego Chanona", file: "RV14.pdf")
+            ]
+        )
     ]
-    
+}
+
+// Helper for dates
+private func iso(_ s: String) -> Date {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withFullDate]
+    return f.date(from: s) ?? .now
 }
