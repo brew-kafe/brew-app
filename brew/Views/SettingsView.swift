@@ -4,7 +4,6 @@
 //
 //  Created by Humberto Canedo Cebreros on 10/09/25.
 //
-//
 
 import SwiftUI
 
@@ -21,9 +20,12 @@ struct SettingsView: View {
                         // Acción para editar perfil
                     }) {
                         HStack {
-                            Label(languageManager.localizedString("edit_profile"),
-                                  systemImage: "person.crop.circle.fill")
-                                .foregroundColor(.brown)
+                            HStack(spacing: 10) {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .foregroundColor(.brown)
+                                Text(languageManager.localizedString("edit_profile"))
+                                    .foregroundColor(.black)
+                            }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
@@ -38,9 +40,12 @@ struct SettingsView: View {
                         // Acción para alertas
                     }) {
                         HStack {
-                            Label(languageManager.localizedString("alerts"),
-                                  systemImage: "exclamationmark.triangle.fill")
-                                .foregroundColor(.orange)
+                            HStack(spacing: 10) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                Text(languageManager.localizedString("alerts"))
+                                    .foregroundColor(.black)
+                            }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
@@ -56,9 +61,12 @@ struct SettingsView: View {
                         showingLanguageSelection = true
                     }) {
                         HStack {
-                            Label(languageManager.localizedString("language_region"),
-                                  systemImage: "globe")
-                                .foregroundColor(.brown)
+                            HStack(spacing: 10) {
+                                Image(systemName: "globe")
+                                    .foregroundColor(.brown)
+                                Text(languageManager.localizedString("language_region"))
+                                    .foregroundColor(.black)
+                            }
                             Spacer()
                             
                             // Muestra el idioma actual
@@ -80,9 +88,12 @@ struct SettingsView: View {
                         // Acción para feedback
                     }) {
                         HStack {
-                            Label(languageManager.localizedString("feedback_support"),
-                                  systemImage: "bubble.left.and.text.bubble.right.fill")
-                                .foregroundColor(.brown)
+                            HStack(spacing: 10) {
+                                Image(systemName: "bubble.left.and.text.bubble.right.fill")
+                                    .foregroundColor(.brown)
+                                Text(languageManager.localizedString("feedback_support"))
+                                    .foregroundColor(.black)
+                            }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
@@ -94,9 +105,12 @@ struct SettingsView: View {
                         // Acción para FAQ
                     }) {
                         HStack {
-                            Label(languageManager.localizedString("faq"),
-                                  systemImage: "questionmark.circle")
-                                .foregroundColor(.brown)
+                            HStack(spacing: 10) {
+                                Image(systemName: "questionmark.circle")
+                                    .foregroundColor(.brown)
+                                Text(languageManager.localizedString("faq"))
+                                    .foregroundColor(.black)
+                            }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
@@ -111,9 +125,12 @@ struct SettingsView: View {
                         // Acción para About
                     }) {
                         HStack {
-                            Label(languageManager.localizedString("about_brew"),
-                                  systemImage: "book")
-                                .foregroundColor(.brown)
+                            HStack(spacing: 10) {
+                                Image(systemName: "book")
+                                    .foregroundColor(.brown)
+                                Text(languageManager.localizedString("about_brew"))
+                                    .foregroundColor(.black)
+                            }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
@@ -125,9 +142,12 @@ struct SettingsView: View {
                         // Acción para Log Out
                     }) {
                         HStack {
-                            Label(languageManager.localizedString("log_out"),
-                                  systemImage: "rectangle.portrait.and.arrow.right")
-                                .foregroundColor(.brown)
+                            HStack(spacing: 10) {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .foregroundColor(.brown)
+                                Text(languageManager.localizedString("log_out"))
+                                    .foregroundColor(.black)
+                            }
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .foregroundColor(.gray)
