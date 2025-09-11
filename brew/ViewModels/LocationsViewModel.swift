@@ -57,6 +57,30 @@ class LocationsViewModel: ObservableObject{
         }
     }
     
+    func nextButtonPressed(){
+        //getting the current index of the array of locations
+        // $0 means first location
+        // guard lets us unwrap
+        guard let currentIndex = locations.firstIndex(where: {$0 == mapLocation}) else{
+            print("No fue posible encontrar el sig indice en el arreglo de ubicaciones!! pero esto no deberia de pasar, hay algo maaal :/")
+            return
+            
+        }
+        
+        //check if the current index is valid cus we dont want it to be outta bounds
+        let nextIndex = currentIndex + 1
+        guard locations.indices.contains(nextIndex) else{
+            //if next index is not a valid one we restart at index 0
+            guard let firstLocation = locations.first else { return}
+            showNextLocation(location: firstLocation)
+            return
+        }
+        //if the location does contain the index
+        // next index is valid
+        let nextLocation = locations[nextIndex] //if we didnt have the guard statement in locations.indices this line would be pretty dangerous cus it could crash our app cus we would be accessing an index we think is there but it might not be, its okay here tho cus we know forsure theres a next location
+        showNextLocation(location: nextLocation)
+    }
+    
     
     
     
