@@ -9,6 +9,8 @@ xcuserdata/
 *.xcscmblueprint
 *.xccheckout
 
+*.xcuserdata
+
 ## Xcode 4
 *.xcuserstate
 *.xcworkspace
