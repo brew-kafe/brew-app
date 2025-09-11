@@ -5,11 +5,12 @@
 //  Created by Humberto Canedo Cebreros on 10/09/25.
 //  Sistema de gestión de idiomas para la app
 //
+//
 
 import Foundation
 import SwiftUI
 
-// MARK: - Enum de Idiomas Disponibles
+// Enum de Idiomas Disponibles
 enum AppLanguage: String, CaseIterable {
     case spanish = "es"
     case english = "en"
@@ -35,7 +36,7 @@ enum AppLanguage: String, CaseIterable {
     }
 }
 
-// MARK: - Gestor Principal de Idiomas
+//  Gestor Principal de Idiomas
 class LanguageManager: ObservableObject {
     static let shared = LanguageManager()
     
@@ -56,12 +57,11 @@ class LanguageManager: ObservableObject {
     }
 }
 
-// MARK: - Servicio de Localización
+//  Servicio de Localización
 class LocalizationService {
     static let shared = LocalizationService()
     
     private let translations: [String: [AppLanguage: String]] = [
-        // Settings Main
         "settings": [
             .spanish: "Configuración",
             .english: "Settings",
@@ -69,7 +69,6 @@ class LocalizationService {
             .maya: "Nu'ukbesajil"
         ],
         
-        // Profile Section
         "profile": [
             .spanish: "Perfil",
             .english: "Profile",
@@ -83,7 +82,6 @@ class LocalizationService {
             .maya: "K'éexik a wíinikil"
         ],
         
-        // Notifications Section
         "notifications": [
             .spanish: "Notificaciones",
             .english: "Notifications",
@@ -97,7 +95,6 @@ class LocalizationService {
             .maya: "K'a'ajsajil"
         ],
         
-        // Preferences Section
         "preferences": [
             .spanish: "Preferencias",
             .english: "Preferences",
@@ -129,7 +126,6 @@ class LocalizationService {
             .maya: "K'áat chi'ob suukilo'ob"
         ],
         
-        // General Section
         "general": [
             .spanish: "General",
             .english: "General",
@@ -149,7 +145,6 @@ class LocalizationService {
             .maya: "Jóok'ol"
         ],
         
-        // Language Selection
         "select_language": [
             .spanish: "Seleccionar Idioma",
             .english: "Select Language",
