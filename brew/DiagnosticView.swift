@@ -23,18 +23,18 @@ struct CameraView: View{
             
             //Going to be a Camera preview
             VStack {
-                Spacer(minLength: 150) // lower camera screen
+                Spacer(minLength: 90) // lower camera screen
                 CameraPreview(camera: camera)
                     .aspectRatio(1, contentMode: .fill)
-                    .frame(width: 350, height: 350)
+                    .frame(width: 340, height: 450)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(Color(red: 88/255, green: 92/255, blue: 48/255), lineWidth: 10)
                     )
                 Spacer()
+                    .frame(height: 25)
             }
-            
             VStack {
                 if camera.isTaken {
                     HStack {
@@ -72,7 +72,7 @@ struct CameraView: View{
                             .font(.headline)
                             .foregroundColor(.white)
                             .padding(.horizontal, 28)
-                            .padding(.vertical, 35)  //Bigger button
+                            .padding(.vertical, 32)  //Bigger button
                             .background(Capsule().fill(Color(red: 88/255, green: 92/255, blue: 48/255)))
                     }
                 } else {
@@ -88,7 +88,7 @@ struct CameraView: View{
                 }
             }
             .frame(maxWidth: .infinity)
-            .padding(.bottom, 65) // move it higher above the tab bar
+            .padding(.bottom, 55) // move it higher above the tab bar
             
         }
     }
