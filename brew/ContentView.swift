@@ -16,66 +16,6 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Updated TabBarView to integrate with existing components
-struct TabBarView: View {
-    @EnvironmentObject private var vm: LocationsViewModel
-    
-    init() {
-        // Set the background color of the tab bar using a custom UIColor from hex
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(hex: "#403003")
-        
-        //Appearance of tab bar on scrollable and non-scrollable views
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-        
-        //Change color of unselected icon color and text
-        appearance.stackedLayoutAppearance.normal.iconColor = UIColor(hex: "#E3DBC7")
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(hex: "#E3DBC7")]
-    }
-    
-    var body: some View {
-        TabView {
-            // Home Tab - Using existing HomeView
-            NavigationView {
-                HomeView()
-            }
-            .tabItem {
-                Label("Inicio", systemImage: "house.fill")
-            }
-
-            // Diagnostic Tab - Using existing DiagnosticView
-            NavigationView {
-                DiagnosticView()
-            }
-            .tabItem {
-                Label("Diagnostico", systemImage: "leaf.fill")
-            }
-
-            // Map Tab - Using existing LocationsView
-            NavigationView {
-                LocationsView()
-                    .environmentObject(vm)
-            }
-            .tabItem {
-                Label("Mapa", systemImage: "map.fill")
-            }
-
-            // Dashboard Tab - Enhanced with data components
-            NavigationView {
-                DashboardView()
-                    .environmentObject(vm)
-            }
-            .tabItem {
-                Label("Tablero", systemImage: "chart.bar.xaxis.ascending")
-            }
-        }
-        //Change color of highlighted icon
-        .tint(Color(hex: "#737839"))
-    }
-}
-
 // MARK: - Enhanced DashboardView with data integration
 struct DashboardView: View {
     @EnvironmentObject private var vm: LocationsViewModel
@@ -83,7 +23,7 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Dashboard Header
+                // Dashboard Header¨_
                 HStack {
                     Text("Tablero de Control")
                         .font(.largeTitle)
@@ -265,31 +205,6 @@ struct LocationReportCard: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter.string(from: date)
-    }
-}
-
-// MARK: - Extensions for UIColor and Color (already exists but ensuring compatibility)
-extension UIColor {
-    convenience init(hex: String) {
-        var hexFormatted = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if hexFormatted.hasPrefix("#") {
-            hexFormatted.remove(at: hexFormatted.startIndex)
-        }
-        
-        var rgb: UInt64 = 0
-        Scanner(string: hexFormatted).scanHexInt64(&rgb)
-
-        let red = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
-        let green = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
-        let blue = CGFloat(rgb & 0x0000FF) / 255.0
-
-        self.init(red: red, green: green, blue: blue, alpha: 1.0)
-    }
-}
-
-extension Color {
-    init(hex: String) {
-        self.init(UIColor(hex: hex))
     }
 }
 

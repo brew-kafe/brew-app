@@ -14,7 +14,7 @@ struct brewApp: App {
     
     var body: some Scene {
         WindowGroup {
-            LocationsView()
+            ContentView()
                 .environmentObject(vm)
         }
     }
