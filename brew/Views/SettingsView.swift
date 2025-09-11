@@ -75,21 +75,7 @@ struct SettingsView: View {
                         }
                     }
                     .buttonStyle(PlainButtonStyle())
-                    
-                    Button(action: {
-                        // Acción para tema
-                    }) {
-                        HStack {
-                            Label(languageManager.localizedString("theme"),
-                                  systemImage: "circle.lefthalf.filled")
-                                .foregroundColor(.brown)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    
+                
                     Button(action: {
                         // Acción para feedback
                     }) {
