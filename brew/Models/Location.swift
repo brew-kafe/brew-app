@@ -8,13 +8,19 @@
 import Foundation
 import MapKit
 
+enum PinKind: String, Codable, CaseIterable {
+    case danger, risk, safe
+}
+
 struct Location: Identifiable, Equatable {
     let name: String
     let cityName: String
+    //let parcelaRegion???
     let coordinates: CLLocationCoordinate2D
     let description: String
     let imageNames: [String]
     let link: String
+    let kind: PinKind
     
     var id: String{
         name + cityName
