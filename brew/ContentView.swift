@@ -8,16 +8,18 @@
 import SwiftUI
 
 struct ContentView: View {
+    @ObservedObject private var languageManager = LanguageManager.shared
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+
+            
+            SettingsView()
+                .tabItem {
+                    Image(systemName: "gear")
+                    Text(languageManager.localizedString("settings"))
+                }
         }
-        .padding()
     }
-}
 
 #Preview {
     ContentView()
