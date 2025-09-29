@@ -103,6 +103,8 @@ struct LanguageSelectionView: View {
                     }
                     .disabled(selectedLanguage == languageManager.currentLanguage)
                 }
+                
+                
             }
         }
     }
