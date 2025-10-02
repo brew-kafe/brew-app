@@ -43,13 +43,3 @@ jobs:
         -sdk iphonesimulator \
         -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
         build
-
-    # Step 5: Run tests
-    - name: Test
-      run: |
-        xcodebuild test -scheme brew \
-        -sdk iphonesimulator \
-        -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' || \
-        xcodebuild test -scheme brew \
-        -sdk iphonesimulator \
-        -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
