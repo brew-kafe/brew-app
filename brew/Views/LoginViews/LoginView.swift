@@ -34,9 +34,10 @@ struct LoginView: View {
                 }
             }
             .padding()
-            .navigationDestination(isPresented: $authVM.isAuthenticated) {
-                UserListView(userVM: UserViewModel())
-            }
         }
     }
+}
+
+#Preview {
+    LoginView(authVM: AuthViewModel())
 }

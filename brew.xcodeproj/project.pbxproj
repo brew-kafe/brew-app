@@ -10,9 +10,22 @@
 		829784792E71D1E400AEAD47 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4D5211192E732B6100231162 /* Exceptions for "brew" folder in "brew" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4DC747912E67DDA200C2CC63 /* brew */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4DC747942E67DDA200C2CC63 /* brew */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4D5211192E732B6100231162 /* Exceptions for "brew" folder in "brew" target */,
+			);
 			path = brew;
 			sourceTree = "<group>";
 		};

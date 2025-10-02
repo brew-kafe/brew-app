@@ -11,11 +11,13 @@ import SwiftUI
 struct brewApp: App {
     
     @StateObject private var vm = LocationsViewModel()
+    @StateObject private var dataController = DataController()
     
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(vm)
+                .modelContainer(dataController.container)
         }
     }
 }
