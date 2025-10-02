@@ -10,8 +10,9 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 
-# Scheme management
-xcshareddata/
+# Scheme management - allow shared schemes but ignore user data
+# xcshareddata/ # Allow this for shared schemes
+xcshareddata/WorkspaceSettings.xcsettings
 
 # Xcode project files
 *.pbxuser

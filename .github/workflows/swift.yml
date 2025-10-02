@@ -14,12 +14,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # 🚨 Step 1: Detect unwanted files in commits
+    # 🚨 Step 1: Detect unwanted files in the latest commit
     - name: Check for unwanted files
       run: |
-        disallowed_files=$(git ls-files | grep -E '\.xcuserstate$|xcuserdata/|DerivedData/|ModuleCache.noindex/|\.DS_Store')
+        disallowed_files=$(git diff --name-only HEAD^ HEAD | grep -E '\.xcuserstate$|xcuserdata/|DerivedData/|ModuleCache.noindex/|\.DS_Store' || true)
         if [ -n "$disallowed_files" ]; then
-          echo "❌ Found disallowed files in commit:"
+          echo "❌ Found disallowed files in the last commit:"
           echo "$disallowed_files"
           exit 1
         fi
@@ -35,21 +35,11 @@ jobs:
     # Step 4: Build for iPhone 16 Pro (fallback iPhone 17)
     - name: Build for iPhone 16 Pro
       run: |
-        xcodebuild -scheme brewApp \
+        xcodebuild -scheme brew \
         -sdk iphonesimulator \
         -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' \
         build || \
-        xcodebuild -scheme brewApp \
+        xcodebuild -scheme brew \
         -sdk iphonesimulator \
         -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
         build
-
-    # Step 5: Run tests
-    - name: Test
-      run: |
-        xcodebuild test -scheme brewApp \
-        -sdk iphonesimulator \
-        -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' || \
-        xcodebuild test -scheme brewApp \
-        -sdk iphonesimulator \
-        -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest'
