@@ -33,7 +33,7 @@ struct TabBarView: View {
             .tabItem { Label("Inicio", systemImage: "house.fill") }
 
             NavigationStack {
-                DiagnosticView()
+                FAQView()
             }
             .tabItem { Label("Diagnóstico", systemImage: "leaf.fill") }
 

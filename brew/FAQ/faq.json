@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "question": "¿Cuál es el propósito de esta app?",
+    "answer": "Esta aplicación ayuda a los usuarios a gestionar sus operaciones combinando herramientas como un calendario, diagnósticos con IA, reportes, tableros de control y mapas de parcelas en una sola plataforma."
+  },
+  {
+    "id": 2,
+    "question": "¿Cómo agrego eventos al calendario?",
+    "answer": "Puedes agregar eventos navegando a la sección de Calendario, seleccionando una fecha y llenando los detalles del evento como título, descripción y hora."
+  },
+  {
+    "id": 3,
+    "question": "¿Qué hace la función de diagnóstico?",
+    "answer": "La herramienta de diagnóstico utiliza aprendizaje automático y clasificación de imágenes para analizar imágenes cargadas y proporcionar información o predicciones basadas en los modelos entrenados."
+  },
+  {
+    "id": 4,
+    "question": "¿Dónde puedo ver mis reportes?",
+    "answer": "Los reportes se pueden generar y acceder desde la sección de Reportes. Puedes verlos, descargarlos o compartirlos según sea necesario."
+  },
+  {
+    "id": 5,
+    "question": "¿Para qué se usan los tableros?",
+    "answer": "Los tableros muestran resúmenes visuales de métricas clave, KPIs y estimaciones de producción a través de gráficos y tablas, lo que facilita monitorear el rendimiento de un vistazo."
+  },
+  {
+    "id": 6,
+    "question": "¿Cómo se almacenan los datos?",
+    "answer": "Todos los datos se almacenan de forma segura dentro de la base de datos de la aplicación y pueden ser accedidos en cualquier momento desde las secciones de Reportes o Tablero."
+  },
+  {
+    "id": 7,
+    "question": "¿Qué puedo encontrar en la vista de Inicio?",
+    "answer": "La vista de Inicio proporciona una visión rápida de actualizaciones importantes, próximos eventos, diagnósticos recientes y accesos directos a otras funciones."
+  },
+  {
+    "id": 8,
+    "question": "¿Puedo ver mis parcelas en un mapa?",
+    "answer": "Sí. La sección de Mapa muestra parcelas o áreas de interés, lo que te permite visualizarlas y gestionarlas geográficamente."
+  },
+  {
+    "id": 9,
+    "question": "¿Cómo puedo personalizar mi configuración?",
+    "answer": "Ve a la sección de Configuración para actualizar tus preferencias, administrar notificaciones, cambiar información de la cuenta y configurar opciones del sistema."
+  },
+  {
+    "id": 10,
+    "question": "¿Mis datos están seguros?",
+    "answer": "Sí. La aplicación sigue prácticas estándar de seguridad para proteger tu información y garantiza que los datos permanezcan privados y accesibles solo para usuarios autorizados."
+  }
+]
