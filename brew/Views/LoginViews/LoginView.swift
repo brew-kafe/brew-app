@@ -162,7 +162,7 @@ struct LoginView: View {
                                 .font(.system(size: 15))
                                 .foregroundColor(.secondary)
                             
-                            NavigationLink(destination: Text("RegisterView")) {
+                            NavigationLink(destination: RegisterView(authVM: AuthViewModel())) {
                                 Text("Regístrate ahora")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundColor(.green)
