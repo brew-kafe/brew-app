@@ -11,14 +11,14 @@ import MapKit
 struct LocationsView: View {
     
     @EnvironmentObject private var vm: LocationsViewModel
-    
-    
+
     var body: some View {
-        ZStack{
+        
+        ZStack {
             mapLayer
                 .ignoresSafeArea()
             
-            VStack(spacing: 0){
+            VStack(spacing: 0) {
                 header
                     .padding()
                 Spacer()
@@ -26,38 +26,38 @@ struct LocationsView: View {
             }
         }
         .sheet(item: $vm.sheetLocation, onDismiss: nil) { location in
-            LocationDetailView(location:location)
+            LocationDetailView(location: location)
         }
     }
 }
 
 struct LocationsView_Previews: PreviewProvider {
-    static var previews: some View{
+    static var previews: some View {
         LocationsView()
             .environmentObject(LocationsViewModel())
     }
 }
 
-extension LocationsView{
+extension LocationsView {
     private var header: some View {
         VStack {
-            Button(action: vm.toggleLocationsList){
-                Text(vm.mapLocation.name + ", " + vm.mapLocation.cityName)
+            Button(action: vm.toggleLocationsList) {
+                Text(vm.mapLocation.name)
                     .font(.title2)
                     .fontWeight(.black)
                     .foregroundColor(.primary)
                     .frame(height: 55)
                     .frame(maxWidth: .infinity)
                     .animation(.none, value: vm.mapLocation)
-                    .overlay(alignment: .leading){
+                    .overlay(alignment: .leading) {
                         Image(systemName: "arrow.down")
                             .font(.headline)
                             .foregroundColor(.primary)
                             .padding()
-                            .rotationEffect(Angle(degrees: vm.showLocationsList ? 180:0))
+                            .rotationEffect(Angle(degrees: vm.showLocationsList ? 180 : 0))
                     }
             }
-            if vm.showLocationsList{
+            if vm.showLocationsList {
                 LocationsListView()
             }
         }
@@ -67,38 +67,62 @@ extension LocationsView{
     }
     
     private var mapLayer: some View {
-        Map(coordinateRegion: $vm.mapRegion,
-            annotationItems: vm.locations,
-            annotationContent: { location in
-            MapAnnotation(coordinate: location.coordinates) {
-                Group{
-                    switch location.kind{
-                    case .danger: LocationMapDangerAnnotationView()
-                    case .risk: LocationMapRiskAnnotationView()
-                    case .safe: LocationMapSafeAnnotationView()
+        Map(/*initialPosition: .region(vm.mapRegion)*/) {
+            ForEach(vm.locations) { location in
+                Annotation(location.name, coordinate: location.coordinates, anchor: .center) {
+                    Group {
+                        switch location.kind {
+                        case .danger:
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .foregroundStyle(.white)
+                                .frame(width:20, height:20)
+                                .padding(7)
+                                .background(.red.gradient, in: .circle)
+
+                        case .risk:
+                            Image(systemName: "asterisk.circle.fill")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .foregroundStyle(.white)
+                                .frame(width:20, height:20)
+                                .padding(7)
+                                .background(.yellow.gradient, in: .circle)
+
+                        case .safe:
+                            Image(systemName: "face.smiling.inverse")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .foregroundStyle(.white)
+                                .frame(width:20, height:20)
+                                .padding(7)
+                                .background(.green.gradient, in: .circle)
+                        }
+                    }
+                    .scaleEffect(vm.mapLocation == location ? 1.2 : 0.8) // highlight selected
+                    .shadow(radius: 6)
+                    .onTapGesture {
+                        vm.showNextLocation(location: location)
                     }
                 }
-                .scaleEffect(vm.mapLocation==location ? 1 :0.7)
-                .shadow(radius:10)
-                .onTapGesture {
-                    vm.showNextLocation(location: location)
-                }
             }
-        })
+        }
     }
     
-    private var locationsPreviewStack: some View{
-        ZStack{
-            ForEach(vm.locations){ location in
+    private var locationsPreviewStack: some View {
+        ZStack {
+            ForEach(vm.locations) { location in
                 if vm.mapLocation == location {
                     LocationPreviewView(location: location)
                         .shadow(color: Color.black.opacity(0.3), radius: 20)
                         .padding()
                         .transition(.asymmetric(
-                            insertion: .move(edge:.trailing),
-                            removal: .move(edge:.leading)))
+                            insertion: .move(edge: .trailing),
+                            removal: .move(edge: .leading)))
                 }
             }
         }
     }
 }
+
