@@ -17,6 +17,10 @@ class AuthViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     private let api = APIService()
+    
+    init() {
+        checkAuthStatus()
+    }
 
     func register(name: String, email: String, password: String, role: String, cooperativeID: Int?) {
         let newUser = RegisterRequest(
@@ -55,6 +59,14 @@ class AuthViewModel: ObservableObject {
                     self?.isAuthenticated = false
                 }
             }
+        }
+    }
+    
+    private func checkAuthStatus() {
+        let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
+        
+        if isLoggedIn {
+            self.isAuthenticated = true
         }
     }
 }

@@ -10,14 +10,18 @@ import SwiftUI
 @main
 struct brewApp: App {
     
-    @StateObject private var vm = LocationsViewModel()
+    @StateObject private var authVM = AuthViewModel()
     @StateObject private var dataController = DataController()
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environmentObject(vm)
-                .modelContainer(dataController.container)
+            if authVM.isAuthenticated {
+                ContentView()
+                    .environmentObject(authVM)
+                    .modelContainer(dataController.container)
+            } else {
+                LoginView(authVM: authVM)
+            }
         }
     }
 }
