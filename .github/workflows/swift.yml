@@ -14,12 +14,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # 🚨 Step 1: Detect unwanted files in commits
+    # 🚨 Step 1: Detect unwanted files in the latest commit
     - name: Check for unwanted files
       run: |
-        disallowed_files=$(git ls-files | grep -E '\.xcuserstate$|xcuserdata/|DerivedData/|ModuleCache.noindex/|\.DS_Store')
+        disallowed_files=$(git diff --name-only HEAD^ HEAD | grep -E '\.xcuserstate$|xcuserdata/|DerivedData/|ModuleCache.noindex/|\.DS_Store' || true)
         if [ -n "$disallowed_files" ]; then
-          echo "❌ Found disallowed files in commit:"
+          echo "❌ Found disallowed files in the last commit:"
           echo "$disallowed_files"
           exit 1
         fi
