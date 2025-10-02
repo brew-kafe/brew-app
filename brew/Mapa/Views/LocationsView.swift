@@ -90,7 +90,7 @@ extension LocationsView {
                 LocationsListView()
             }
         }
-        .background(.thickMaterial)
+        .background(.ultraThinMaterial)
         .cornerRadius(10)
         .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 15)
     }
