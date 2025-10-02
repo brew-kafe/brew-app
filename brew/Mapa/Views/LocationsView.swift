@@ -2,7 +2,7 @@
 //  LocationsView.swift
 //  brew
 //
-//  Created by AGRM  on 09/09/25.
+//  Created by AGRM on 09/09/25.
 //
 
 import SwiftUI
@@ -10,10 +10,14 @@ import MapKit
 
 struct LocationsView: View {
     
+    let locationManager = CLLocationManager() // for onboarding
     @EnvironmentObject private var vm: LocationsViewModel
+    
+    // 👇 Map style state
+    @State private var selectedMapStyle: MapStyleOption = .hybrid
 
+    
     var body: some View {
-        
         ZStack {
             mapLayer
                 .ignoresSafeArea()
@@ -25,6 +29,10 @@ struct LocationsView: View {
                 locationsPreviewStack
             }
         }
+        .onAppear {
+            // Ask for permission when view appears
+            locationManager.requestWhenInUseAuthorization()
+        }
         .sheet(item: $vm.sheetLocation, onDismiss: nil) { location in
             LocationDetailView(location: location)
         }
@@ -35,6 +43,27 @@ struct LocationsView_Previews: PreviewProvider {
     static var previews: some View {
         LocationsView()
             .environmentObject(LocationsViewModel())
+    }
+}
+
+// MARK: - MapStyleOption Enum
+enum MapStyleOption {
+    case standard, satellite, hybrid
+    
+    var style: MapStyle {
+        switch self {
+        case .standard: return .standard
+        case .satellite: return .imagery
+        case .hybrid: return .hybrid(elevation: .realistic)
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .standard: return "map"
+        case .satellite: return "sparkles"
+        case .hybrid: return "globe.americas.fill"
+        }
     }
 }
 
@@ -67,7 +96,8 @@ extension LocationsView {
     }
     
     private var mapLayer: some View {
-        Map(/*initialPosition: .region(vm.mapRegion)*/) {
+        Map {
+            UserAnnotation()
             ForEach(vm.locations) { location in
                 Annotation(location.name, coordinate: location.coordinates, anchor: .center) {
                     Group {
@@ -77,30 +107,30 @@ extension LocationsView {
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .foregroundStyle(.white)
-                                .frame(width:20, height:20)
+                                .frame(width: 20, height: 20)
                                 .padding(7)
                                 .background(.red.gradient, in: .circle)
-
+                            
                         case .risk:
                             Image(systemName: "asterisk.circle.fill")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .foregroundStyle(.white)
-                                .frame(width:20, height:20)
+                                .frame(width: 20, height: 20)
                                 .padding(7)
                                 .background(.yellow.gradient, in: .circle)
-
+                            
                         case .safe:
-                            Image(systemName: "face.smiling.inverse")
+                            Image(systemName: "checkmark.circle.fill")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .foregroundStyle(.white)
-                                .frame(width:20, height:20)
+                                .frame(width: 20, height: 20)
                                 .padding(7)
                                 .background(.green.gradient, in: .circle)
                         }
                     }
-                    .scaleEffect(vm.mapLocation == location ? 1.2 : 0.8) // highlight selected
+                    .scaleEffect(vm.mapLocation == location ? 1.2 : 0.8)
                     .shadow(radius: 6)
                     .onTapGesture {
                         vm.showNextLocation(location: location)
@@ -108,6 +138,36 @@ extension LocationsView {
                 }
             }
         }
+        .mapControls { } // disable Apple’s default placement
+        .overlay(alignment: .bottomTrailing) {
+            VStack(spacing: 8) {
+                // Built-in controls
+                MapUserLocationButton()
+                    .mapControlVisibility(.visible)
+                MapCompass()
+                    .mapControlVisibility(.visible)
+                MapPitchToggle()
+                    .mapControlVisibility(.visible)
+                MapScaleView()
+                    .mapControlVisibility(.visible)
+                
+                // Custom map style button
+                Button {
+                    cycleMapStyle()
+                } label: {
+                    Image(systemName: selectedMapStyle.icon)
+                        .font(.title3)
+                        .foregroundColor(.primary)
+                        .padding(10)
+                        .background(.ultraThinMaterial, in: Circle())
+                        .shadow(radius: 3)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.trailing, 12)
+            .padding(.bottom, 550)
+        }
+        .mapStyle(selectedMapStyle.style) // apply chosen style
     }
     
     private var locationsPreviewStack: some View {
@@ -122,6 +182,15 @@ extension LocationsView {
                             removal: .move(edge: .leading)))
                 }
             }
+        }
+    }
+    
+    // MARK: - Helpers
+    private func cycleMapStyle() {
+        switch selectedMapStyle {
+        case .standard: selectedMapStyle = .satellite
+        case .satellite: selectedMapStyle = .hybrid
+        case .hybrid: selectedMapStyle = .standard
         }
     }
 }
