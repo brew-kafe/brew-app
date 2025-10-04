@@ -53,25 +53,7 @@ struct TabBarView: View {
     }
 }
 
-//Convert hex string to UIColor
-extension UIColor {
-    convenience init(hex: String) {
-        var h = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if h.hasPrefix("#") { h.removeFirst() }
-        var rgb: UInt64 = 0
-        Scanner(string: h).scanHexInt64(&rgb)
-        self.init(red: CGFloat((rgb & 0xFF0000) >> 16) / 255,
-                  green: CGFloat((rgb & 0x00FF00) >> 8) / 255,
-                  blue: CGFloat(rgb & 0x0000FF) / 255,
-                  alpha: 1)
-    }
-}
-
-extension Color {
-    init(hex: String) {
-        self.init(UIColor(hex: hex))
-    }
-}
+// Note: Color extensions moved to ColorExtensions.swift
 
 #Preview {
     TabBarView()

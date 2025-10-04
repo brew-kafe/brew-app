@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct brewApp: App {
@@ -23,5 +24,6 @@ struct brewApp: App {
                 LoginView(authVM: authVM)
             }
         }
+        .modelContainer(for: Activity.self)
     }
 }
