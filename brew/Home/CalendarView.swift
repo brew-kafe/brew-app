@@ -74,6 +74,7 @@ struct ActivityValidator {
 }
 
 // MARK: - Color Extension
+// check this section for branch
 extension Color {
     init?(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
