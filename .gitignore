@@ -1,0 +1,65 @@
+# ======================
+# Xcode / macOS ignores
+# ======================
+
+# Build products
+build/
+DerivedData/
+
+# User settings (conflicts if committed!)
+xcuserdata/
+*.xcuserstate
+
+# Scheme management - allow shared schemes but ignore user data
+# xcshareddata/ # Allow this for shared schemes
+xcshareddata/WorkspaceSettings.xcsettings
+
+# Xcode project files
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# ======================
+# Swift Package Manager
+# ======================
+.build/
+.swiftpm/
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+
+# ======================
+# CocoaPods
+# ======================
+Pods/
+Podfile.lock
+
+# ======================
+# Carthage
+# ======================
+Carthage/Build/
+
+# ======================
+# Fastlane (optional CI/CD)
+# ======================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
+
+# ======================
+# Other
+# ======================
+*.swp
+*.lock
+*.tmp
+*.log

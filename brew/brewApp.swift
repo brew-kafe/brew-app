@@ -10,9 +10,19 @@ import SwiftData
 
 @main
 struct brewApp: App {
+    
+    @StateObject private var authVM = AuthViewModel()
+    @StateObject private var dataController = DataController()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if authVM.isAuthenticated {
+                ContentView()
+                    .environmentObject(authVM)
+                    .modelContainer(dataController.container)
+            } else {
+                LoginView(authVM: authVM)
+            }
         }
         .modelContainer(for: Activity.self)
     }
