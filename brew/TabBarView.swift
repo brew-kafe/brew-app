@@ -8,7 +8,8 @@
 import SwiftUI
 
 struct TabBarView: View {
-    @EnvironmentObject private var vm: LocationsViewModel
+    @EnvironmentObject private var locationsViewModel: LocationsViewModel
+    @EnvironmentObject private var reportsViewModel: ReportViewModel
     
     init() {
         // Set the background color of the tab bar using a custom UIColor from hex
@@ -31,6 +32,11 @@ struct TabBarView: View {
                 HomeView()
             }
             .tabItem { Label("Inicio", systemImage: "house.fill") }
+            
+            NavigationStack {
+                ReportsView()
+            }
+            .tabItem { Label("Reporte", systemImage: "doc.text.fill")}
 
             NavigationStack {
                 DiagnosticView()
@@ -39,13 +45,13 @@ struct TabBarView: View {
 
             NavigationStack {
                 LocationsView()
-                    .environmentObject(vm)
+                    .environmentObject(locationsViewModel)
             }
             .tabItem { Label("Mapa", systemImage: "map.fill") }
 
             NavigationStack {
                 DashboardView()
-                    .environmentObject(vm)
+                    .environmentObject(locationsViewModel)
             }
             .tabItem { Label("Tablero", systemImage: "chart.bar.xaxis.ascending") }
         }

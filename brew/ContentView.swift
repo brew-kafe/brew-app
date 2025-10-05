@@ -9,10 +9,12 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var locationsViewModel = LocationsViewModel()
+    @StateObject private var reportViewModel = ReportViewModel()
     
     var body: some View {
         TabBarView()
             .environmentObject(locationsViewModel)
+            .environmentObject(reportViewModel)
     }
 }
 

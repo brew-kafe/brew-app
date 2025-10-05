@@ -16,13 +16,13 @@ struct HomeView: View  {
                 VStack(spacing: 20) {
                     // MARK: - Header
                     HStack {
-                        Text("Inicio")
-                            .font(.system(size: 45, weight: .bold))
+                        Text("Bienvenido a Brew")
+                            .font(.system(size: 35, weight: .bold))
                             .foregroundColor(.primary)
                         
                         Spacer()
                         
-                        Image("")
+                        Image("person.icon")
                             .resizable()
                             .scaledToFit()
                             .background(Color.yellow)
@@ -39,7 +39,7 @@ struct HomeView: View  {
                     // MARK: - Cards Row (Clima y Último Reporte)
                     HStack(spacing: 16) {
                         WeatherCard()
-                        LastReportCard()
+                        LastReportCard(report: DetailedReportData.sample)
                     }
                     .padding(.horizontal, 20)
                     
