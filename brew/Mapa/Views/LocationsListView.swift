@@ -14,7 +14,7 @@ struct LocationsListView: View {
     @State private var searchText: String = ""
     @State private var selectedFilter: String = "Todos"
     
-    // Computed property: filters locations by search + filter
+    // filters locations by search + filter
     private var filteredLocations: [Location] {
         vm.locations.filter { location in
             // Search condition

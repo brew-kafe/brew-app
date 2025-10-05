@@ -15,7 +15,8 @@ struct LocationsView: View {
     
     // Map style state
     @State private var selectedMapStyle: MapStyleOption = .hybrid
-
+    @State private var showPhotoGuidanceControls = false
+    
     var body: some View {
         ZStack {
             mapLayer
@@ -29,11 +30,14 @@ struct LocationsView: View {
             }
         }
         .onAppear {
-            // Ask for permission when view appears
             locationManager.requestWhenInUseAuthorization()
         }
         .sheet(item: $vm.sheetLocation, onDismiss: nil) { location in
             LocationDetailView(location: location)
+        }
+        // Overlay for Guided Photo Mode
+        .overlay(alignment: .bottomLeading) {
+            photoGuidanceOverlay
         }
     }
 }
@@ -66,6 +70,7 @@ enum MapStyleOption {
     }
 }
 
+// MARK: - Main View Extension
 extension LocationsView {
     
     // HEADER
@@ -101,6 +106,8 @@ extension LocationsView {
     private var mapLayer: some View {
         Map {
             UserAnnotation()
+            
+            // Regular parcel annotations
             ForEach(vm.locations) { location in
                 Annotation(location.name, coordinate: location.coordinates, anchor: .center) {
                     Group {
@@ -140,10 +147,44 @@ extension LocationsView {
                     }
                 }
             }
+            
+            // Photo guidance points
+            if let profile = vm.photoGuidanceProfile {
+                ForEach(profile.points) { point in
+                    Annotation(point.label, coordinate: point.coordinate) {
+                        VStack {
+                            if point.isCaptured {
+                                Image(systemName: "camera.fill")
+                                    .foregroundStyle(.green)
+                            } else {
+                                Image(systemName: "camera.circle")
+                                    .foregroundStyle(.blue)
+                                    .scaleEffect(1.2)
+                                    .shadow(color: .blue.opacity(0.6), radius: 5)
+                            }
+                            Text(point.label)
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .padding(3)
+                                .background(Color.black.opacity(0.4))
+                                .cornerRadius(6)
+                        }
+                        .onTapGesture {
+                            vm.markPhotoCaptured(point: point)
+                        }
+                    }
+                }
+            }
+            
+            // Route line (placed outside annotations)
+            if let route = vm.routePolyline {
+                MapPolyline(route)
+                    .stroke(.blue, style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
         }
         .mapControls { } // disables built-in ones
         .overlay(alignment: .bottomTrailing) {
-            // Custom map style toggle only
             Button {
                 cycleMapStyle()
             } label: {
@@ -178,6 +219,47 @@ extension LocationsView {
         }
     }
     
+    // Overlay Controls for Guided Photo Mode
+    private var photoGuidanceOverlay: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                vm.startGuidedPhoto(for: vm.mapLocation)
+                showPhotoGuidanceControls = true
+            } label: {
+                Label("Iniciar Guía Fotográfica", systemImage: "camera.viewfinder")
+                    .padding()
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .shadow(radius: 4)
+            }
+            
+            if showPhotoGuidanceControls {
+                if let next = vm.getNextPhotoPoint() {
+                    Button {
+                        withAnimation(.easeInOut) {
+                            vm.markPhotoCaptured(point: next)
+                            vm.focusOn(point: next)
+                        }
+                    } label: {
+                        Label("Siguiente Punto: \(next.label)", systemImage: "arrow.forward.circle")
+                            .padding()
+                            .background(.blue.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
+                            .foregroundColor(.white)
+                    }
+                } else if vm.photoGuidanceProfile?.allCaptured == true {
+                    Text("Todas las fotos capturadas")
+                        .font(.subheadline)
+                        .padding(8)
+                        .background(.green.opacity(0.8), in: RoundedRectangle(cornerRadius: 10))
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                showPhotoGuidanceControls = false
+                            }
+                        }
+                }
+            }
+        }
+        .padding()
+    }
     
     // MARK: - Helpers
     private func cycleMapStyle() {
