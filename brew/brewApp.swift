@@ -16,6 +16,7 @@ struct brewApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(vm)
+            
         }
     }
 }
