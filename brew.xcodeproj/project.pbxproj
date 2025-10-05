@@ -10,9 +10,22 @@
 		829784792E71D1E400AEAD47 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		8285C0292E8DDE46005D16EC /* Exceptions for "brew" folder in "brew" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4DC747912E67DDA200C2CC63 /* brew */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		4DC747942E67DDA200C2CC63 /* brew */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8285C0292E8DDE46005D16EC /* Exceptions for "brew" folder in "brew" target */,
+			);
 			path = brew;
 			sourceTree = "<group>";
 		};
@@ -243,15 +256,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = TPYYK8YKGL;
+				DEVELOPMENT_TEAM = R8ARC534CX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = brew/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "<string>This app requires access to the camera to take diagnostic pictures.</string>";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "pls gimme ur loc";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "<string>tono</string>";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -274,15 +287,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = TPYYK8YKGL;
+				DEVELOPMENT_TEAM = R8ARC534CX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = brew/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "<string>This app requires access to the camera to take diagnostic pictures.</string>";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "pls gimme ur loc";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "<string>tono</string>";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (

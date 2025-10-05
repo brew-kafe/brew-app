@@ -13,10 +13,9 @@ struct LocationsView: View {
     let locationManager = CLLocationManager() // for onboarding
     @EnvironmentObject private var vm: LocationsViewModel
     
-    // 👇 Map style state
+    // Map style state
     @State private var selectedMapStyle: MapStyleOption = .hybrid
 
-    
     var body: some View {
         ZStack {
             mapLayer
@@ -68,6 +67,8 @@ enum MapStyleOption {
 }
 
 extension LocationsView {
+    
+    // HEADER
     private var header: some View {
         VStack {
             Button(action: vm.toggleLocationsList) {
@@ -95,6 +96,8 @@ extension LocationsView {
         .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 15)
     }
     
+    
+    // MAP LAYER
     private var mapLayer: some View {
         Map {
             UserAnnotation()
@@ -138,38 +141,28 @@ extension LocationsView {
                 }
             }
         }
-        .mapControls { } // disable Apple’s default placement
+        .mapControls { } // disables built-in ones
         .overlay(alignment: .bottomTrailing) {
-            VStack(spacing: 8) {
-                // Built-in controls
-                MapUserLocationButton()
-                    .mapControlVisibility(.visible)
-                MapCompass()
-                    .mapControlVisibility(.visible)
-                MapPitchToggle()
-                    .mapControlVisibility(.visible)
-                MapScaleView()
-                    .mapControlVisibility(.visible)
-                
-                // Custom map style button
-                Button {
-                    cycleMapStyle()
-                } label: {
-                    Image(systemName: selectedMapStyle.icon)
-                        .font(.title3)
-                        .foregroundColor(.primary)
-                        .padding(10)
-                        .background(.ultraThinMaterial, in: Circle())
-                        .shadow(radius: 3)
-                }
-                .buttonStyle(.plain)
+            // Custom map style toggle only
+            Button {
+                cycleMapStyle()
+            } label: {
+                Image(systemName: selectedMapStyle.icon)
+                    .font(.title3)
+                    .foregroundColor(.primary)
+                    .padding(12)
+                    .background(.ultraThinMaterial, in: Circle())
+                    .shadow(radius: 3)
             }
+            .buttonStyle(.plain)
             .padding(.trailing, 12)
             .padding(.bottom, 550)
         }
-        .mapStyle(selectedMapStyle.style) // apply chosen style
+        .mapStyle(selectedMapStyle.style)
     }
     
+    
+    // PREVIEW CARD STACK
     private var locationsPreviewStack: some View {
         ZStack {
             ForEach(vm.locations) { location in
@@ -184,6 +177,7 @@ extension LocationsView {
             }
         }
     }
+    
     
     // MARK: - Helpers
     private func cycleMapStyle() {
