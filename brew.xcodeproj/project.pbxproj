@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		4DC747922E67DDA200C2CC63 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		829784792E71D1E400AEAD47 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -33,16 +33,8 @@
 			isa = PBXGroup;
 			children = (
 				4DC747942E67DDA200C2CC63 /* brew */,
-				4DC747932E67DDA200C2CC63 /* Products */,
+				829784792E71D1E400AEAD47 /* brew.app */,
 			);
-			sourceTree = "<group>";
-		};
-		4DC747932E67DDA200C2CC63 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				4DC747922E67DDA200C2CC63 /* brew.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -67,7 +59,7 @@
 			packageProductDependencies = (
 			);
 			productName = brew;
-			productReference = 4DC747922E67DDA200C2CC63 /* brew.app */;
+			productReference = 829784792E71D1E400AEAD47 /* brew.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -95,7 +87,7 @@
 			mainGroup = 4DC747892E67DDA200C2CC63;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 4DC747932E67DDA200C2CC63 /* Products */;
+			productRefGroup = 4DC747892E67DDA200C2CC63;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -251,8 +243,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TPYYK8YKGL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				INFOPLIST_KEY_NSCameraUsageDescription = "<string>This app requires access to the camera to take diagnostic pictures.</string>";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "<string>tono</string>";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -263,7 +259,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brew;
+				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brew.tono;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -278,8 +274,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TPYYK8YKGL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "";
+				INFOPLIST_KEY_NSCameraUsageDescription = "<string>This app requires access to the camera to take diagnostic pictures.</string>";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "<string>tono</string>";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -290,7 +290,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brew;
+				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brew.tono;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
