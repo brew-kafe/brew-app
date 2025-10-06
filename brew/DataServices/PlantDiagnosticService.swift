@@ -52,7 +52,7 @@ class PlantDiagnosticService {
             let config = MLModelConfiguration()
             config.computeUnits = .all // Use all available compute units (CPU, GPU, Neural Engine)
             
-            let mlModel = try PlantDiagnostic_1(configuration: config)
+            let mlModel = try PlantDiagnostic(configuration: config)
             model = try VNCoreMLModel(for: mlModel.model)
             
             print("✅ PlantDiagnostic_1 model loaded successfully")

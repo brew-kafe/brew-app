@@ -17,7 +17,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		4DAED0A72E937CCB00A310F7 /* brewTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = brewTests.xctest; path = "/Users/ntonio/tonojects/brew-app/build/Debug-iphoneos/brew.app/PlugIns/brewTests.xctest"; sourceTree = "<absolute>"; };
+		4D1114052E94162100C95AD8 /* brewTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = brewTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		829784792E71D1E400AEAD47 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -71,6 +71,7 @@
 				4DC747942E67DDA200C2CC63 /* brew */,
 				829784792E71D1E400AEAD47 /* brew.app */,
 				4DAED0A82E937CCB00A310F7 /* brewTests */,
+				4D1114052E94162100C95AD8 /* brewTests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -97,7 +98,7 @@
 			packageProductDependencies = (
 			);
 			productName = brewTests;
-			productReference = 4DAED0A72E937CCB00A310F7 /* brewTests.xctest */;
+			productReference = 4D1114052E94162100C95AD8 /* brewTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		4DC747912E67DDA200C2CC63 /* brew */ = {
@@ -393,7 +394,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brew.tono;
+				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brewapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -423,7 +424,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brew.tono;
+				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.brewapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
