@@ -24,6 +24,5 @@ struct brewApp: App {
                 LoginView(authVM: authVM)
             }
         }
-        .modelContainer(for: Activity.self)
     }
 }

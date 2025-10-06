@@ -15,7 +15,7 @@ class DataController: ObservableObject {
 
     init() {
         do {
-            container = try ModelContainer(for: UserEntity.self)
+            container = try ModelContainer(for: UserEntity.self, Activity.self)
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }
