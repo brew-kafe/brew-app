@@ -6,7 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		4DAED0AB2E937CCB00A310F7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4DC7478A2E67DDA200C2CC63 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4DC747912E67DDA200C2CC63;
+			remoteInfo = brew;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		4DAED0A72E937CCB00A310F7 /* brewTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; name = brewTests.xctest; path = "/Users/ntonio/tonojects/brew-app/build/Debug-iphoneos/brew.app/PlugIns/brewTests.xctest"; sourceTree = "<absolute>"; };
 		829784792E71D1E400AEAD47 /* brew.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = brew.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -21,6 +32,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		4DAED0A82E937CCB00A310F7 /* brewTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = brewTests;
+			sourceTree = "<group>";
+		};
 		4DC747942E67DDA200C2CC63 /* brew */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -32,6 +48,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		4DAED0A42E937CCB00A310F7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4DC7478F2E67DDA200C2CC63 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -47,12 +70,36 @@
 			children = (
 				4DC747942E67DDA200C2CC63 /* brew */,
 				829784792E71D1E400AEAD47 /* brew.app */,
+				4DAED0A82E937CCB00A310F7 /* brewTests */,
 			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4DAED0A62E937CCB00A310F7 /* brewTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4DAED0AD2E937CCB00A310F7 /* Build configuration list for PBXNativeTarget "brewTests" */;
+			buildPhases = (
+				4DAED0A32E937CCB00A310F7 /* Sources */,
+				4DAED0A42E937CCB00A310F7 /* Frameworks */,
+				4DAED0A52E937CCB00A310F7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4DAED0AC2E937CCB00A310F7 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4DAED0A82E937CCB00A310F7 /* brewTests */,
+			);
+			name = brewTests;
+			packageProductDependencies = (
+			);
+			productName = brewTests;
+			productReference = 4DAED0A72E937CCB00A310F7 /* brewTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		4DC747912E67DDA200C2CC63 /* brew */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 4DC7479D2E67DDA300C2CC63 /* Build configuration list for PBXNativeTarget "brew" */;
@@ -82,9 +129,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					4DAED0A62E937CCB00A310F7 = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = 4DC747912E67DDA200C2CC63;
+					};
 					4DC747912E67DDA200C2CC63 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -105,11 +156,19 @@
 			projectRoot = "";
 			targets = (
 				4DC747912E67DDA200C2CC63 /* brew */,
+				4DAED0A62E937CCB00A310F7 /* brewTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		4DAED0A52E937CCB00A310F7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4DC747902E67DDA200C2CC63 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -120,6 +179,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4DAED0A32E937CCB00A310F7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4DC7478E2E67DDA200C2CC63 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -129,7 +195,59 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		4DAED0AC2E937CCB00A310F7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4DC747912E67DDA200C2CC63 /* brew */;
+			targetProxy = 4DAED0AB2E937CCB00A310F7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		4DAED0AE2E937CCB00A310F7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TPYYK8YKGL;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.tono.brewTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/brew.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/brew";
+			};
+			name = Debug;
+		};
+		4DAED0AF2E937CCB00A310F7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = TPYYK8YKGL;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = itesm.swifties.tono.brewTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/brew.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/brew";
+			};
+			name = Release;
+		};
 		4DC7479B2E67DDA300C2CC63 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -316,6 +434,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4DAED0AD2E937CCB00A310F7 /* Build configuration list for PBXNativeTarget "brewTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4DAED0AE2E937CCB00A310F7 /* Debug */,
+				4DAED0AF2E937CCB00A310F7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		4DC7478D2E67DDA200C2CC63 /* Build configuration list for PBXProject "brew" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
