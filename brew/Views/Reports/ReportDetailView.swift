@@ -112,42 +112,6 @@ struct ReportDetailView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
             }
-            
-            // AI Analysis Results
-            if !report.aiAnalysisResults.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Análisis de IA")
-                        .font(.headline)
-                    
-                    ForEach(report.aiAnalysisResults) { result in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(result.condition)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                
-                                ProgressView(value: result.confidence)
-                                    .progressViewStyle(LinearProgressViewStyle(tint: confidenceColor(result.confidence)))
-                                    .scaleEffect(y: 0.8)
-                            }
-                            
-                            Spacer()
-                            
-                            Text("\(Int(result.confidence * 100))%")
-                                .font(.caption)
-                                .fontWeight(.medium)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(confidenceColor(result.confidence))
-                                .foregroundColor(.white)
-                                .cornerRadius(6)
-                        }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                    }
-                }
-            }
         }
     }
     

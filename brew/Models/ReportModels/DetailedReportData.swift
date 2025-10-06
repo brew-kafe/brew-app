@@ -19,8 +19,6 @@ struct DetailedReportData: Identifiable, Codable {
     let timestamp: String
     let technicianName: String
     let nutritionalData: [NutritionalData]
-    let soilData: SoilData
-    let aiAnalysisResults: [AIAnalysisResult]
     let manualObservations: String
     let photos: [PhotoData]
     
@@ -43,14 +41,6 @@ struct DetailedReportData: Identifiable, Codable {
         // Add nutritional data
         if !nutritionalData.isEmpty {
             dataSets.append(RadarChartDataSet.fromNutritionalData(nutritionalData))
-        }
-        
-        // Add soil data
-        dataSets.append(RadarChartDataSet.fromSoilData(soilData))
-        
-        // Add AI analysis data
-        if !aiAnalysisResults.isEmpty {
-            dataSets.append(RadarChartDataSet.fromAIAnalysis(aiAnalysisResults))
         }
         
         return dataSets
@@ -85,27 +75,6 @@ struct NutritionalData: Identifiable, Codable {
     }
 }
 
-// MARK: - Soil Data Model
-struct SoilData: Codable {
-    let structure: String
-    let color: String
-    let texture: String
-    let ph: Double
-    let organicMatter: Double
-    let overallScore: Int
-}
-
-// MARK: - AI Analysis Result Model
-struct AIAnalysisResult: Identifiable, Codable {
-    let id = UUID()
-    let condition: String
-    let confidence: Double
-    
-    enum CodingKeys: String, CodingKey {
-        case condition, confidence
-    }
-}
-
 // MARK: - Photo Data Model
 struct PhotoData: Identifiable, Codable {
     let id: String
@@ -135,18 +104,6 @@ extension DetailedReportData {
             NutritionalData(nutrient: "Manganeso", symptomsPercentage: 18.0, weightingValue: 4),
             NutritionalData(nutrient: "Boro", symptomsPercentage: 24.0, weightingValue: 3)
         ],
-        soilData: SoilData(
-            structure: "Granular",
-            color: "Café claro",
-            texture: "Franco limoso",
-            ph: 6.5,
-            organicMatter: 3.2,
-            overallScore: 4
-        ),
-        aiAnalysisResults: [
-            AIAnalysisResult(condition: "Deficiencia de Nitrógeno", confidence: 0.89),
-            AIAnalysisResult(condition: "Posible enfermedad fúngica", confidence: 0.67)
-        ],
         manualObservations: "Se observan manchas amarillentas en las hojas inferiores, típicas de deficiencia de nitrógeno. Recomendado aplicar fertilizante rico en nitrógeno en la próxima semana.",
         photos: [
             PhotoData(id: "1", url: "https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=800", description: "Hojas con deficiencia nutricional"),
@@ -174,17 +131,6 @@ extension DetailedReportData {
             NutritionalData(nutrient: "Azufre", symptomsPercentage: 7.0, weightingValue: 4),
             NutritionalData(nutrient: "Manganeso", symptomsPercentage: 3.5, weightingValue: 5),
             NutritionalData(nutrient: "Boro", symptomsPercentage: 4.5, weightingValue: 4)
-        ],
-        soilData: SoilData(
-            structure: "Grumosa",
-            color: "Café oscuro",
-            texture: "Franco",
-            ph: 6.8,
-            organicMatter: 4.1,
-            overallScore: 5
-        ),
-        aiAnalysisResults: [
-            AIAnalysisResult(condition: "Planta saludable", confidence: 0.95)
         ],
         manualObservations: "Planta en perfecto estado. Crecimiento vigoroso y hojas de color verde intenso. Mantener el programa actual de fertilización.",
         photos: [
