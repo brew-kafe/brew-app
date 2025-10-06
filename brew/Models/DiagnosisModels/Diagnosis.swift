@@ -14,11 +14,11 @@ struct Diagnosis: Identifiable, Codable {
     let parcelName: String
     let plantNumber: String
     let technicianName: String
-    let diagnosis: String
     let date: Date
-    let imageData: Data?
+    let diagnosis: String
     let nutritionalDeficiencies: [NutritionalDeficiency]
     let overallHealth: PlantHealth
+    let imageData: Data?
     let notes: String?
     
     init(
@@ -26,55 +26,23 @@ struct Diagnosis: Identifiable, Codable {
         parcelName: String,
         plantNumber: String,
         technicianName: String,
-        diagnosis: String,
         date: Date = Date(),
-        imageData: Data? = nil,
+        diagnosis: String,
         nutritionalDeficiencies: [NutritionalDeficiency] = [],
-        overallHealth: PlantHealth = .unknown,
+        overallHealth: PlantHealth = .fair,
+        imageData: Data? = nil,
         notes: String? = nil
     ) {
         self.id = id
         self.parcelName = parcelName
         self.plantNumber = plantNumber
         self.technicianName = technicianName
-        self.diagnosis = diagnosis
         self.date = date
-        self.imageData = imageData
+        self.diagnosis = diagnosis
         self.nutritionalDeficiencies = nutritionalDeficiencies
         self.overallHealth = overallHealth
+        self.imageData = imageData
         self.notes = notes
-    }
-}
-
-// MARK: - Plant Health Status
-enum PlantHealth: String, Codable, CaseIterable {
-    case excellent = "Excelente"
-    case good = "Buena"
-    case fair = "Regular"
-    case poor = "Pobre"
-    case critical = "Crítica"
-    case unknown = "Sin analizar"
-    
-    var color: Color {
-        switch self {
-        case .excellent: return .green
-        case .good: return Color(red: 0.5, green: 0.8, blue: 0.3)
-        case .fair: return .yellow
-        case .poor: return .orange
-        case .critical: return .red
-        case .unknown: return .gray
-        }
-    }
-    
-    var icon: String {
-        switch self {
-        case .excellent: return "checkmark.seal.fill"
-        case .good: return "checkmark.circle.fill"
-        case .fair: return "exclamationmark.circle.fill"
-        case .poor: return "exclamationmark.triangle.fill"
-        case .critical: return "xmark.circle.fill"
-        case .unknown: return "questionmark.circle.fill"
-        }
     }
 }
 
@@ -104,60 +72,107 @@ struct NutritionalDeficiency: Identifiable, Codable {
     }
 }
 
-// MARK: - Nutrient Types
+// MARK: - Nutrient Type
 enum NutrientType: String, Codable, CaseIterable {
     case nitrogen = "Nitrógeno"
     case phosphorus = "Fósforo"
     case potassium = "Potasio"
-    case zinc = "Zinc"
+    case calcium = "Calcio"
     case magnesium = "Magnesio"
     case iron = "Hierro"
-    case sulfur = "Azufre"
     case manganese = "Manganeso"
-    case boron = "Boro"
-    case calcium = "Calcio"
-    case copper = "Cobre"
+    case zinc = "Zinc"
     
     var symbol: String {
         switch self {
         case .nitrogen: return "N"
         case .phosphorus: return "P"
         case .potassium: return "K"
-        case .zinc: return "Zn"
+        case .calcium: return "Ca"
         case .magnesium: return "Mg"
         case .iron: return "Fe"
-        case .sulfur: return "S"
         case .manganese: return "Mn"
-        case .boron: return "B"
-        case .calcium: return "Ca"
-        case .copper: return "Cu"
+        case .zinc: return "Zn"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .nitrogen: return .green
+        case .phosphorus: return .purple
+        case .potassium: return .blue
+        case .calcium: return .orange
+        case .magnesium: return .pink
+        case .iron: return .red
+        case .manganese: return .brown
+        case .zinc: return .gray
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .nitrogen:
+            return "Esencial para el crecimiento vegetativo y la producción de clorofila"
+        case .phosphorus:
+            return "Importante para la formación de raíces y transferencia de energía"
+        case .potassium:
+            return "Regula procesos fisiológicos y mejora la calidad del fruto"
+        case .calcium:
+            return "Fundamental para la estructura celular y desarrollo radicular"
+        case .magnesium:
+            return "Componente central de la clorofila y activador enzimático"
+        case .iron:
+            return "Esencial para la síntesis de clorofila y procesos respiratorios"
+        case .manganese:
+            return "Importante para la fotosíntesis y metabolismo del nitrógeno"
+        case .zinc:
+            return "Regula el crecimiento y desarrollo de las plantas"
         }
     }
 }
 
 // MARK: - Deficiency Severity
-enum DeficiencySeverity: String, Codable, CaseIterable {
-    case mild = "Leve"
+enum DeficiencySeverity: String, Codable {
+    case low = "Leve"
     case moderate = "Moderada"
     case severe = "Severa"
-    case critical = "Crítica"
     
     var color: Color {
         switch self {
-        case .mild: return .yellow
+        case .low: return .yellow
         case .moderate: return .orange
-        case .severe: return Color(red: 0.9, green: 0.4, blue: 0.2)
-        case .critical: return .red
+        case .severe: return .red
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .low: return "exclamationmark.circle.fill"
+        case .moderate: return "exclamationmark.triangle.fill"
+        case .severe: return "xmark.octagon.fill"
         }
     }
 }
 
-// MARK: - Photo Analysis Request
-struct PhotoAnalysisRequest {
-    let imageData: Data
-    let parcelName: String
-    let plantNumber: String
-    let technicianName: String
-    let totalPlants: Int
-    let additionalNotes: String?
+// MARK: - Plant Health
+enum PlantHealth: String, Codable {
+    case healthy = "Saludable"
+    case fair = "Regular"
+    case poor = "Deficiente"
+    
+    var color: Color {
+        switch self {
+        case .healthy: return .green
+        case .fair: return .orange
+        case .poor: return .red
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .healthy: return "checkmark.seal.fill"
+        case .fair: return "exclamationmark.triangle.fill"
+        case .poor: return "xmark.shield.fill"
+        }
+    }
 }

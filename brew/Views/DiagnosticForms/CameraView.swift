@@ -2,7 +2,7 @@
 //  CameraView.swift
 //  brew
 //
-//  Created by toño on 05/10/25.
+//  Created by: toño
 //
 
 import SwiftUI
@@ -11,6 +11,9 @@ import AVFoundation
 // MARK: - Main Camera View
 struct CameraView: View {
     @StateObject var camera = CameraModel()
+    @StateObject var viewModel = DiagnosisViewModel()
+    @Environment(\.dismiss) var dismiss
+    @State private var showDiagnosticForm = false
     
     var body: some View {
         ZStack {
@@ -18,159 +21,121 @@ struct CameraView: View {
             
             VStack {
                 Spacer(minLength: 90)
-                CameraPreview(camera: camera)
-                    .aspectRatio(1, contentMode: .fill)
-                    .frame(width: 340, height: 450)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255), lineWidth: 10)
-                    )
-                Spacer()
-                    .frame(height: 25)
+                
+                ZStack {
+                    if camera.isTaken, let uiImage = UIImage(data: camera.picData) {
+                        // Show captured image
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 340, height: 450)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color(red: 88/255, green: 92/255, blue: 48/255), lineWidth: 10)
+                            )
+                    } else {
+                        // Live camera preview
+                        CameraPreview(camera: camera)
+                            .aspectRatio(1, contentMode: .fill)
+                            .frame(width: 340, height: 450)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color(red: 88/255, green: 92/255, blue: 48/255), lineWidth: 10)
+                            )
+                    }
+                }
+                
+                Spacer().frame(height: 25)
             }
             
             VStack {
-                if camera.isTaken {
-                    HStack {
-                        Spacer()
-                        Button(action: camera.reTake, label: {
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 20))
+                            .foregroundColor(.black)
+                            .padding()
+                            .background(Color.white)
+                            .clipShape(Circle())
+                    }
+                    .padding(.leading, 10)
+                    
+                    Spacer()
+                    
+                    if camera.isTaken {
+                        Button(action: camera.reTake) {
                             Image(systemName: "arrow.triangle.2.circlepath.camera")
                                 .font(.system(size: 32))
                                 .foregroundColor(.black)
                                 .padding()
                                 .background(Color.white)
                                 .clipShape(Circle())
-                        })
+                        }
                         .padding(.trailing, 10)
                     }
                 }
+                .padding(.top, 50)
+                
                 Spacer()
+            }
+            
+            // Processing indicator
+            if camera.isProcessing {
+                Color.black.opacity(0.4).ignoresSafeArea()
+                
+                VStack(spacing: 12) {
+                    ProgressView().scaleEffect(1.5).tint(.white)
+                    Text("Procesando foto...").foregroundColor(.white).font(.headline)
+                }
             }
         }
         .onAppear {
-            camera.Check()
-            camera.isTaken = false
-            camera.isSaved = false
-            camera.picData = Data()
-            camera.session.startRunning()
+            camera.checkPermissions()
         }
         .safeAreaInset(edge: .bottom) {
             HStack {
                 if camera.isTaken {
                     Button(action: {
-                        print("Diagnose tapped")
+                        if camera.picData.count > 0 {
+                            showDiagnosticForm = true
+                        } else {
+                            camera.reTake()
+                        }
                     }) {
                         Text("Diagnosticar")
                             .font(.headline)
                             .foregroundColor(.white)
                             .padding(.horizontal, 28)
                             .padding(.vertical, 32)
-                            .background(Capsule().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
+                            .background(Capsule().fill(Color(red: 88/255, green: 92/255, blue: 48/255)))
                     }
+                    .disabled(camera.picData.isEmpty)
+                    .opacity(camera.picData.isEmpty ? 0.5 : 1.0)
                 } else {
                     Button(action: camera.takePic) {
                         Image(systemName: "camera.fill")
                             .font(.system(size: 32, weight: .semibold))
                             .foregroundColor(.white)
                             .padding(32)
-                            .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
+                            .background(Circle().fill(Color(red: 88/255, green: 92/255, blue: 48/255)))
                     }
                 }
             }
             .frame(maxWidth: .infinity)
             .padding(.bottom, 55)
         }
-    }
-}
-
-// MARK: - Camera Model
-class CameraModel: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
-    @Published var isTaken = false
-    @Published var session = AVCaptureSession()
-    @Published var alert = false
-
-    @Published var output = AVCapturePhotoOutput()
-    @Published var preview: AVCaptureVideoPreviewLayer!
-    @Published var isSaved = false
-    @Published var picData = Data(count: 0)
-
-    func Check() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            setUp()
-            return
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { status in
-                if status {
-                    self.setUp()
+        .sheet(isPresented: $showDiagnosticForm) {
+            DiagnosticFormView(
+                imageData: camera.picData,
+                viewModel: viewModel,
+                onComplete: {
+                    showDiagnosticForm = false
+                    dismiss()
                 }
-            }
-        case .denied:
-            self.alert.toggle()
-            return
-        default:
-            return
+            )
         }
-    }
-
-    func setUp() {
-        do {
-            self.session.beginConfiguration()
-            let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
-            guard let device = device else {
-                print("No back camera available")
-                return
-            }
-            let input = try AVCaptureDeviceInput(device: device)
-            if self.session.canAddInput(input) {
-                self.session.addInput(input)
-            }
-            if self.session.canAddOutput(self.output) {
-                self.session.addOutput(self.output)
-            }
-            self.session.commitConfiguration()
-        } catch {
-            print(error.localizedDescription)
-        }
-    }
-
-    func takePic() {
-        DispatchQueue.global(qos: .background).async {
-            self.output.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)
-            self.session.stopRunning()
-            DispatchQueue.main.async {
-                withAnimation { self.isTaken.toggle() }
-            }
-        }
-    }
-
-    func reTake() {
-        DispatchQueue.global(qos: .background).async {
-            self.session.startRunning()
-            DispatchQueue.main.async {
-                withAnimation { self.isTaken.toggle() }
-                self.isSaved = false
-            }
-        }
-    }
-
-    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        if error != nil {
-            return
-        }
-        print("Pic taken...")
-        guard let imageData = photo.fileDataRepresentation() else {
-            return
-        }
-        self.picData = imageData
-    }
-
-    func savePic() {
-        guard let image = UIImage(data: self.picData) else { return }
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-        self.isSaved = true
-        print("Saved Successfully...")
     }
 }
 
@@ -184,7 +149,6 @@ struct CameraPreview: UIViewRepresentable {
         camera.preview.frame = view.frame
         camera.preview.videoGravity = .resizeAspectFill
         view.layer.addSublayer(camera.preview)
-        camera.session.startRunning()
         return view
     }
 
