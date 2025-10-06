@@ -352,9 +352,7 @@ struct RadarLabelsView: View {
 #Preview {
     ScrollView {
         UnifiedRadarChartView(dataSets: [
-            RadarChartDataSet.nutritionalSample,
-            RadarChartDataSet.soilSample,
-            RadarChartDataSet.healthSample
+            RadarChartDataSet.nutritionalSample
         ])
         .padding()
     }

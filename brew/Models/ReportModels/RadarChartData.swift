@@ -25,25 +25,16 @@ struct RadarDataPoint: Identifiable {
 // MARK: - Analysis Type Enum
 enum AnalysisType: String, CaseIterable {
     case nutritional = "Nutricional"
-    case soil = "Suelo" 
-    case health = "Salud"
-    case growth = "Crecimiento"
     
     var icon: String {
         switch self {
         case .nutritional: return "leaf.fill"
-        case .soil: return "globe.americas.fill"
-        case .health: return "cross.fill"
-        case .growth: return "arrow.up.right"
         }
     }
     
     var color: Color {
         switch self {
         case .nutritional: return .green
-        case .soil: return .brown
-        case .health: return .blue
-        case .growth: return .purple
         }
     }
 }
@@ -63,7 +54,7 @@ struct RadarChartDataSet {
             )
         }
         
-        let overallScore = dataPoints.isEmpty ? 0.0 : 
+        let overallScore = dataPoints.isEmpty ? 0.0 :
             dataPoints.reduce(0.0) { $0 + $1.normalizedValue } / Double(dataPoints.count)
         
         return RadarChartDataSet(
@@ -71,70 +62,6 @@ struct RadarChartDataSet {
             dataPoints: dataPoints,
             overallScore: overallScore
         )
-    }
-    
-    static func fromSoilData(_ data: SoilData) -> RadarChartDataSet {
-        let dataPoints = [
-            RadarDataPoint(label: "pH", value: normalizedPH(data.ph), maxValue: 1.0),
-            RadarDataPoint(label: "Materia Orgánica", value: data.organicMatter, maxValue: 10.0),
-            RadarDataPoint(label: "Estructura", value: structureScore(data.structure), maxValue: 1.0),
-            RadarDataPoint(label: "Textura", value: textureScore(data.texture), maxValue: 1.0),
-            RadarDataPoint(label: "Puntuación", value: Double(data.overallScore), maxValue: 5.0)
-        ]
-        
-        let overallScore = dataPoints.reduce(0.0) { $0 + $1.normalizedValue } / Double(dataPoints.count)
-        
-        return RadarChartDataSet(
-            type: .soil,
-            dataPoints: dataPoints,
-            overallScore: overallScore
-        )
-    }
-    
-    static func fromAIAnalysis(_ results: [AIAnalysisResult]) -> RadarChartDataSet {
-        let dataPoints = results.map { result in
-            RadarDataPoint(
-                label: result.condition,
-                value: result.confidence,
-                maxValue: 1.0
-            )
-        }
-        
-        let overallScore = dataPoints.isEmpty ? 0.0 : 
-            dataPoints.reduce(0.0) { $0 + $1.normalizedValue } / Double(dataPoints.count)
-        
-        return RadarChartDataSet(
-            type: .health,
-            dataPoints: dataPoints,
-            overallScore: overallScore
-        )
-    }
-    
-    // Helper functions for soil data conversion
-    private static func normalizedPH(_ ph: Double) -> Double {
-        // Ideal pH range for coffee is 6.0-7.0
-        let idealPH = 6.5
-        let deviation = abs(ph - idealPH)
-        return max(0.0, 1.0 - (deviation / 2.0)) // Max deviation of 2.0 gives score of 0
-    }
-    
-    private static func structureScore(_ structure: String) -> Double {
-        switch structure.lowercased() {
-        case "granular", "grumosa": return 1.0
-        case "blocosa", "prismática": return 0.7
-        case "laminar": return 0.4
-        default: return 0.5
-        }
-    }
-    
-    private static func textureScore(_ texture: String) -> Double {
-        switch texture.lowercased() {
-        case "franco", "franco limoso": return 1.0
-        case "franco arenoso", "franco arcilloso": return 0.8
-        case "arenoso": return 0.6
-        case "arcilloso": return 0.4
-        default: return 0.5
-        }
     }
 }
 
@@ -155,30 +82,6 @@ extension RadarChartDataSet {
         ],
         overallScore: 0.773
     )
-    
-    static let soilSample = RadarChartDataSet(
-        type: .soil,
-        dataPoints: [
-            RadarDataPoint(label: "pH", value: 6.5, maxValue: 8.0),
-            RadarDataPoint(label: "Materia Orgánica", value: 3.2, maxValue: 10.0),
-            RadarDataPoint(label: "Estructura", value: 0.9, maxValue: 1.0),
-            RadarDataPoint(label: "Textura", value: 0.8, maxValue: 1.0),
-            RadarDataPoint(label: "Drenaje", value: 0.7, maxValue: 1.0)
-        ],
-        overallScore: 0.72
-    )
-    
-    static let healthSample = RadarChartDataSet(
-        type: .health,
-        dataPoints: [
-            RadarDataPoint(label: "Vigor", value: 0.85, maxValue: 1.0),
-            RadarDataPoint(label: "Color", value: 0.78, maxValue: 1.0),
-            RadarDataPoint(label: "Tamaño", value: 0.82, maxValue: 1.0),
-            RadarDataPoint(label: "Densidad", value: 0.90, maxValue: 1.0),
-            RadarDataPoint(label: "Resistencia", value: 0.75, maxValue: 1.0)
-        ],
-        overallScore: 0.82
-    )
 }
 
 extension RadarDataPoint {
@@ -197,4 +100,3 @@ extension RadarDataPoint {
         }
     }
 }
-

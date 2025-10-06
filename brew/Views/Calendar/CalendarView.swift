@@ -399,7 +399,7 @@ struct CalendarGridView: View {
             }
             
             LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(daysInMonth, id: \.self) { date in
+                ForEach(Array(daysInMonth.enumerated()), id: \.offset) { index, date in
                     if let date = date {
                         DayCell(
                             date: date,
@@ -865,6 +865,7 @@ struct AddActivitySheet: View {
             )
             
             modelContext.insert(newActivity)
+            try modelContext.save()
             dismiss()
         } catch {
             onError(error.localizedDescription)
