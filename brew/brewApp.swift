@@ -13,6 +13,7 @@ struct brewApp: App {
     
     @StateObject private var authVM = AuthViewModel()
     @StateObject private var dataController = DataController()
+    @StateObject private var languageManager = LanguageManager.shared
     
     var body: some Scene {
         WindowGroup {
@@ -24,5 +25,6 @@ struct brewApp: App {
                 LoginView(authVM: authVM)
             }
         }
+        .environmentObject(languageManager)
     }
 }

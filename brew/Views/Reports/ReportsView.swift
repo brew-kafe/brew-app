@@ -221,7 +221,6 @@ struct ReportRowView: View {
             Spacer()
             
             // Chevron con fondo sutil
-            Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(.gray.opacity(0.5))
         }

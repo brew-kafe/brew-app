@@ -10,12 +10,12 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var locationsViewModel = LocationsViewModel()
     @StateObject private var reportViewModel = ReportViewModel()
+    @StateObject private var languageManager = LanguageManager.shared
     
     var body: some View {
         TabBarView()
             .environmentObject(locationsViewModel)
-            .environmentObject(reportViewModel)
-    }
+            .environmentObject(reportViewModel)    }
 }
 
 // MARK: - Enhanced DashboardView with data integration

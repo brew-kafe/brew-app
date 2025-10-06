@@ -50,10 +50,9 @@ struct TabBarView: View {
             .tabItem { Label("Mapa", systemImage: "map.fill") }
 
             NavigationStack {
-                DashboardView()
-                    .environmentObject(locationsViewModel)
+                SettingsView()
             }
-            .tabItem { Label("Tablero", systemImage: "chart.bar.xaxis.ascending") }
+            .tabItem { Label("Ajustes", systemImage: "gearshape") }
         }
         .tint(Color(hex: "#737839"))
     }
