@@ -8,83 +8,129 @@
 import Foundation
 import MapKit
 import SwiftUI
+import CoreLocation
 
-class LocationsViewModel: ObservableObject{
+class LocationsViewModel: NSObject, ObservableObject, CLLocationManagerDelegate {
     
-    //all loaded locations
+    // MARK: - Properties
     @Published var locations: [Location]
-    
-    //current location on map
     @Published var mapLocation: Location {
-        didSet{
-            updateMapRegion(location: mapLocation)
-        }
+        didSet { updateMapRegion(location: mapLocation) }
     }
-    
-    //current region on map
     @Published var mapRegion: MKCoordinateRegion = MKCoordinateRegion()
-    let mapSpan = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1) //el zoom q le das
-    
-    //Show list of locations
     @Published var showLocationsList: Bool = false
-    
-    //show location detail via sheet
     @Published var sheetLocation: Location? = nil
     
-    init() {
+    // Photo Guidance
+    @Published var photoGuidanceProfile: PhotoGuidanceProfile? = nil
+    @Published var routePolyline: MKPolyline? = nil
+    @Published var userLocation: CLLocationCoordinate2D? = nil
+    
+    private let mapSpan = MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+    private let guidanceService = PhotoGuidanceService()
+    private let locationManager = CLLocationManager()
+    
+    // MARK: - Init
+    override init() {
         let locations = LocationsDataService.locations
         self.locations = locations
-        self.mapLocation = locations.first! //! unwrapping cus the data is hardcoded, but if we were to get this from the internet and we dont actually know hoew many elements they are and if theres even a first location we should not put the !
-        self.updateMapRegion(location: locations.first!)
+        self.mapLocation = locations.first!
+        super.init()
+        updateMapRegion(location: mapLocation)
+        configureLocationManager()
     }
     
+    // MARK: - CoreLocation setup
+    private func configureLocationManager() {
+        locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let loc = locations.last else { return }
+        userLocation = loc.coordinate
+        checkProximityToNextPoint()
+        updateRouteLine()
+    }
+    
+    // MARK: - Map Logic
     private func updateMapRegion(location: Location) {
-        withAnimation(.easeInOut){
-            mapRegion = MKCoordinateRegion(
-                center: location.coordinates,
-                span: mapSpan)
+        withAnimation(.easeInOut) {
+            mapRegion = MKCoordinateRegion(center: location.coordinates, span: mapSpan)
         }
     }
     
-    func toggleLocationsList(){
-        withAnimation(.easeInOut){
-            showLocationsList = !showLocationsList
-            
+    func toggleLocationsList() {
+        withAnimation(.easeInOut) { showLocationsList.toggle() }
+    }
+    
+    func showNextLocation(location: Location) {
+        withAnimation(.easeInOut) {
+            mapLocation = location
+            showLocationsList = false
         }
     }
     
-    func showNextLocation(location: Location){
-        withAnimation(.easeInOut){
-            mapLocation = location //update map 
-            showLocationsList = false //close list
-        }
+    func nextButtonPressed() {
+        guard let currentIndex = locations.firstIndex(where: { $0 == mapLocation }) else { return }
+        let nextIndex = (currentIndex + 1) % locations.count
+        showNextLocation(location: locations[nextIndex])
     }
     
-    func nextButtonPressed(){
-        //getting the current index of the array of locations
-        // $0 means first location
-        // guard lets us unwrap
-        guard let currentIndex = locations.firstIndex(where: {$0 == mapLocation}) else{
-            print("No fue posible encontrar el sig indice en el arreglo de ubicaciones!! pero esto no deberia de pasar, hay algo maaal :/")
+    // MARK: - Photo Guidance Logic
+    func startGuidedPhoto(for location: Location) {
+        let points = guidanceService.generatePoints(around: location.coordinates)
+        photoGuidanceProfile = PhotoGuidanceProfile(parcelID: UUID(), points: points)
+        updateRouteLine()
+    }
+    
+    func markPhotoCaptured(point: PhotoPoint) {
+        guard var profile = photoGuidanceProfile else { return }
+        if let i = profile.points.firstIndex(of: point) {
+            profile.points[i].isCaptured = true
+            photoGuidanceProfile = profile
+        }
+        updateRouteLine()
+    }
+    
+    func getNextPhotoPoint() -> PhotoPoint? {
+        return photoGuidanceProfile?.nextUncaptured
+    }
+    
+    private func updateRouteLine() {
+        guard let userLoc = userLocation,
+              let next = getNextPhotoPoint() else {
+            routePolyline = nil
             return
-            
+        }
+        routePolyline = guidanceService.routeLine(from: userLoc, to: next.coordinate)
+    }
+    
+    private func checkProximityToNextPoint() {
+        guard let userLoc = userLocation,
+              let next = getNextPhotoPoint() else { return }
+        
+        let distance = guidanceService.distance(from: userLoc, to: next.coordinate)
+        if distance < 8 { // within 8 meters
+            markPhotoCaptured(point: next)
+            print("Punto \(next.label) capturado automáticamente (distancia \(Int(distance))m)")
+        }
+    }
+    
+    // MARK: - Focus & Route
+    func focusOn(point: PhotoPoint) {
+        withAnimation(.easeInOut) {
+            mapRegion = MKCoordinateRegion(
+                center: point.coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.0015, longitudeDelta: 0.0015)
+            )
         }
         
-        //check if the current index is valid cus we dont want it to be outta bounds
-        let nextIndex = currentIndex + 1
-        guard locations.indices.contains(nextIndex) else{
-            //if next index is not a valid one we restart at index 0
-            guard let firstLocation = locations.first else { return}
-            showNextLocation(location: firstLocation)
-            return
+        // creates a line from user to next point (if current location available)
+        if let userLoc = userLocation {
+            let coords = [userLoc, point.coordinate]
+            routePolyline = MKPolyline(coordinates: coords, count: coords.count)
         }
-        //if the location does contain the index
-        // next index is valid
-        let nextLocation = locations[nextIndex] //if we didnt have the guard statement in locations.indices this line would be pretty dangerous cus it could crash our app cus we would be accessing an index we think is there but it might not be, its okay here tho cus we know forsure theres a next location
-        showNextLocation(location: nextLocation)
     }
-    
-    
-    
-    
 }
