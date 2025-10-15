@@ -10,10 +10,10 @@ struct CreateReportView: View {
     @State private var isCreatingReport: Bool = false
     @State private var showAlert: Bool = false
     @State private var alertMessage: String = ""
-    @State private var selectedDiagnosis: Diagnosis? = nil
+    @State private var selectedDiagnosis: DiagnosisEntity? = nil
     
-    var diagnoses: [Diagnosis]
-    var onCreate: (String, Diagnosis?) -> Void
+    var diagnoses: [DiagnosisEntity]
+    var onCreate: (String, DiagnosisEntity?) -> Void
     
     var body: some View {
         NavigationView {
@@ -25,10 +25,10 @@ struct CreateReportView: View {
                 
                 Section(header: Text("Select the diagnose that you want to include in this report")) {
                     Picker("Select Diagnosis", selection: $selectedDiagnosis) {
-                        Text("None").tag(nil as Diagnosis?)
+                        Text("None").tag(nil as DiagnosisEntity?)
                         ForEach(diagnoses, id: \.id) { diagnosis in
-                            Text("\(diagnosis.parcelName) – Plant \(diagnosis.plantNumber)")
-                                .tag(diagnosis as Diagnosis?)
+                            Text("\(diagnosis.parcelName) – Plant \(diagnosis.plantNumber ?? "N/A")")
+                                .tag(diagnosis as DiagnosisEntity?)
                         }
                     }
                     .pickerStyle(MenuPickerStyle())
@@ -81,12 +81,12 @@ struct CreateReportView: View {
 #Preview {
     // Example diagnoses to preview
     let sampleDiagnoses = [
-        Diagnosis(parcelName: "Parcel A", plantNumber: "1", technicianName: "Luis", diagnosis: "Nitrogen Deficiency"),
-        Diagnosis(parcelName: "Parcel B", plantNumber: "2", technicianName: "Ana", diagnosis: "Healthy Plant"),
-        Diagnosis(parcelName: "Parcel C", plantNumber: "3", technicianName: "Miguel", diagnosis: "Iron Deficiency")
+        DiagnosisEntity(parcelName: "Parcel A", plantNumber: "1", technicianName: "Luis", primaryDeficiency: "Nitrogen Deficiency", deficiencyElement: "Nitrogen", detectionState: "CONFIRMED", allElements: [], photoURLs: [], diagnosisDate: Date(), createdAt: Date()),
+        DiagnosisEntity(parcelName: "Parcel B", plantNumber: "2", technicianName: "Ana", primaryDeficiency: "Healthy Plant", deficiencyElement: "None", detectionState: "HEALTHY", allElements: [], photoURLs: [], diagnosisDate: Date(), createdAt: Date()),
+        DiagnosisEntity(parcelName: "Parcel C", plantNumber: "3", technicianName: "Miguel", primaryDeficiency: "Iron Deficiency", deficiencyElement: "Iron", detectionState: "CONFIRMED", allElements: [], photoURLs: [], diagnosisDate: Date(), createdAt: Date())
     ]
     
-    return CreateReportView(diagnoses: sampleDiagnoses) { name, selected in
-        print("Created report: \(name), diagnosis: \(selected?.diagnosis ?? "None")")
+    CreateReportView(diagnoses: sampleDiagnoses) { name, selected in
+        print("Created report: \(name), diagnosis: \(selected?.primaryDeficiency ?? "None")")
     }
 }

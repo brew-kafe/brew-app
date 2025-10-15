@@ -7,27 +7,40 @@
 
 import Foundation
 
-struct DiagnosisDTO: Codable, Identifiable, Hashable {
+struct DiagnosisDTO: Codable, Identifiable {
     let id: UUID?
-    let parcel_name: String
-    let plant_number: String?
-    let technician_name: String
-    let primary_deficiency: String?
-    let deficiency_element: String?
-    let detection_state: DetectionState?
-    let ai_confidence: Float?
-    let ai_description: String?
-    let ai_recommendations: [String]?
-    let all_elements: [ElementAnalysis]?
-    let photo_urls: [String]?
-    let overall_health: PlantHealth?
+    let parcelName: String
+    let plantNumber: String?
+    let technicianName: String
+    let primaryDeficiency: String?
+    let deficiencyElement: String?
+    let detectionState: DetectionState?
+    let aiConfidence: Double?
+    let aiDescription: String?
+    let aiRecommendations: [String]?
+    let allElements: [ElementAnalysis]?
+    let photoUrls: [String]?
+    let overallHealth: PlantHealth?
     let notes: String?
-    let diagnosis_date: Date
-    let created_at: Date?
-}
-
-enum PlantHealth: String, Codable {
-    case healthy = "Saludable"
-    case fair = "Regular"
-    case poor = "Deficiente"
+    let diagnosisDate: Date
+    let createdAt: Date?
+    
+    enum CodingKeys: String, CodingKey {
+        case id
+        case parcelName = "parcel_name"
+        case plantNumber = "plant_number"
+        case technicianName = "technician_name"
+        case primaryDeficiency = "primary_deficiency"
+        case deficiencyElement = "deficiency_element"
+        case detectionState = "detection_state"
+        case aiConfidence = "ai_confidence"
+        case aiDescription = "ai_description"
+        case aiRecommendations = "ai_recommendations"
+        case allElements = "all_elements"
+        case photoUrls = "photo_urls"
+        case overallHealth = "overall_health"
+        case notes
+        case diagnosisDate = "diagnosis_date"
+        case createdAt = "created_at"
+    }
 }

@@ -10,9 +10,9 @@ import SwiftUI
 struct DiagnosticListView: View {
     @StateObject var viewModel = DiagnosisViewModel()
     @State private var showCamera = false
-    @State private var selectedDiagnosis: Diagnosis?
+    @State private var selectedDiagnosis: DiagnosisEntity?
     @State private var showingDeleteAlert = false
-    @State private var diagnosisToDelete: Diagnosis?
+    @State private var diagnosisToDelete: DiagnosisEntity?
     
     var body: some View {
         NavigationView {
@@ -29,16 +29,47 @@ struct DiagnosticListView: View {
             }
             .navigationTitle("Diagnósticos")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showCamera = true }) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 20))
-                            .foregroundColor(.white)
-                            .padding(12)
-                            .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { 
+                        viewModel.toggleTestMode()
+                    }) {
+                        HStack {
+                            Image(systemName: viewModel.isTestMode ? "flask.fill" : "flask")
+                            Text(viewModel.isTestMode ? "Test" : "Normal")
+                        }
+                        .font(.caption)
+                        .foregroundColor(viewModel.isTestMode ? .orange : .gray)
                     }
-                    .accessibilityLabel("Abrir cámara para diagnóstico")
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 12) {
+                        // Test Diagnosis Button (only show in test mode)
+                        if viewModel.isTestMode {
+                            Button(action: { 
+                                viewModel.createTestDiagnosis()
+                            }) {
+                                Image(systemName: "wand.and.stars")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(.white)
+                                    .padding(12)
+                                    .background(Circle().fill(Color.orange))
+                                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            }
+                            .accessibilityLabel("Crear diagnóstico de prueba")
+                        }
+                        
+                        // Camera Button
+                        Button(action: { showCamera = true }) {
+                            Image(systemName: "camera.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.white)
+                                .padding(12)
+                                .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
+                                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                        }
+                        .accessibilityLabel("Abrir cámara para diagnóstico")
+                    }
                 }
             }
             .sheet(isPresented: $showCamera) {
@@ -84,7 +115,7 @@ struct DiagnosticListView: View {
 
 // MARK: - Diagnosis Row View
 struct DiagnosisRowView: View {
-    let diagnosis: Diagnosis
+    let diagnosis: DiagnosisEntity
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -96,46 +127,46 @@ struct DiagnosisRowView: View {
                 Spacer()
                 
                 HStack(spacing: 4) {
-                    Image(systemName: diagnosis.overallHealth.icon)
-                        .font(.system(size: 14))
-                        .foregroundColor(diagnosis.overallHealth.color)
+                    Image(systemName: diagnosis.detectionState == "danger" ? "exclamationmark.triangle.fill" : diagnosis.detectionState == "moderate" ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(diagnosis.detectionState == "danger" ? .red : diagnosis.detectionState == "moderate" ? .orange : .green)
                     
-                    Text(diagnosis.overallHealth.rawValue)
+                    Text(diagnosis.detectionState)
                         .font(.caption)
-                        .foregroundColor(diagnosis.overallHealth.color)
+                        .foregroundColor(diagnosis.detectionState == "danger" ? .red : diagnosis.detectionState == "moderate" ? .orange : .green)
                         .fontWeight(.medium)
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(diagnosis.overallHealth.color.opacity(0.1))
+                .background((diagnosis.detectionState == "danger" ? Color.red : diagnosis.detectionState == "moderate" ? Color.orange : Color.green).opacity(0.1))
                 .cornerRadius(8)
             }
             
             HStack {
-                Label(diagnosis.plantNumber, systemImage: "leaf.fill")
+                Label(diagnosis.plantNumber ?? "N/A", systemImage: "leaf.fill")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                 
                 Spacer()
                 
-                Label(dateFormatter.string(from: diagnosis.date), systemImage: "calendar")
+                Label(dateFormatter.string(from: diagnosis.diagnosisDate), systemImage: "calendar")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
             
-            if !diagnosis.nutritionalDeficiencies.isEmpty {
+            if !diagnosis.allElements.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 12))
                         .foregroundColor(.orange)
                     
-                    Text("\(diagnosis.nutritionalDeficiencies.count) deficiencia(s) detectada(s)")
+                    Text("\(diagnosis.allElements.count) deficiencia(s) detectada(s)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
             
-            Text(diagnosis.diagnosis)
+            Text(diagnosis.aiDescription ?? "No description available")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .lineLimit(2)

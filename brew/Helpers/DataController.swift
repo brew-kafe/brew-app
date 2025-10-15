@@ -15,7 +15,11 @@ class DataController: ObservableObject {
 
     init() {
         do {
-            container = try ModelContainer(for: UserEntity.self, Activity.self)
+            if #available(iOS 18.1, macOS 15.1, *) {
+                container = try ModelContainer(for: UserEntity.self, Activity.self, AIDiagnosisEntity.self)
+            } else {
+                container = try ModelContainer(for: UserEntity.self, Activity.self)
+            }
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
         }

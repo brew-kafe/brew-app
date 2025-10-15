@@ -10,5 +10,10 @@ import Foundation
 struct DiagnosisCreateResponse: Codable {
     let success: Bool
     let message: String
-    let diagnosisId: String?
+    let diagnosisId: String  // Remove optional - API always returns this
+    
+    enum CodingKeys: String, CodingKey {
+        case success, message
+        case diagnosisId = "diagnosis_id"
+    }
 }

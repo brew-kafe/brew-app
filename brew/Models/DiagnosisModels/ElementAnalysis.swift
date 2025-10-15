@@ -7,16 +7,18 @@
 
 import Foundation
 
-struct ElementAnalysis: Codable, Hashable {
+struct ElementAnalysis: Codable, Identifiable {
+    let id = UUID()
     let element: String
-    let percentage: Float
-    let detection_state: DetectionState
-    let deficiency_level: String?
+    let percentage: Double
+    let detectionState: DetectionState
+    let deficiencyLevel: String?
     let recommendations: [String]
-}
 
-enum DetectionState: String, Codable {
-    case danger
-    case moderate
-    case optimal
+    enum CodingKeys: String, CodingKey {
+        case element, percentage
+        case detectionState = "detection_state"
+        case deficiencyLevel = "deficiency_level"
+        case recommendations  
+    }
 }

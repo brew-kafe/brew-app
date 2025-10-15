@@ -7,18 +7,33 @@
 
 import Foundation
 
-struct AIPlantDiagnosis: Codable, Hashable {
-    let parcel_name: String
-    let technician_name: String
-    let diagnosis_date: Date
-    let primary_deficiency: String
-    let deficiency_element: String
-    let detection_state: DetectionState
-    let ai_diagnosis_description: String
-    let ai_recommendations: [String]
-    let all_elements: [ElementAnalysis]
-    let photo_urls: [String]
-    let ai_confidence: Float
-    let analysis_timestamp: Date
+struct AIPlantDiagnosis: Codable {
+    let parcelName: String
+    let technicianName: String
+    let diagnosisDate: Date
+    let primaryDeficiency: String
+    let deficiencyElement: String
+    let detectionState: DetectionState
+    let aiDiagnosisDescription: String
+    let aiRecommendations: [String]
+    let allElements: [ElementAnalysis]
+    let photoUrls: [String]
+    let aiConfidence: Double
+    let analysisTimestamp: Date
+    
+    enum CodingKeys: String, CodingKey {
+        case parcelName = "parcel_name"
+        case technicianName = "technician_name"
+        case diagnosisDate = "diagnosis_date"
+        case primaryDeficiency = "primary_deficiency"
+        case deficiencyElement = "deficiency_element"
+        case detectionState = "detection_state"
+        case aiDiagnosisDescription = "ai_diagnosis_description"
+        case aiRecommendations = "ai_recommendations"
+        case allElements = "all_elements"
+        case photoUrls = "photo_urls"
+        case aiConfidence = "ai_confidence"
+        case analysisTimestamp = "analysis_timestamp"
+    }
 }
 

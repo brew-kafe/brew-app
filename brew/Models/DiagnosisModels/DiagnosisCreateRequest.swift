@@ -8,10 +8,19 @@
 import Foundation
 
 struct DiagnosisCreateRequest: Codable {
-    let parcel_name: String
-    let plant_number: String
-    let technician_name: String
-    let ai_analysis: AIPlantDiagnosis
-    let photo_urls: [String]
+    let parcelName: String
+    let plantNumber: String
+    let technicianName: String
+    let aiAnalysis: AIPlantDiagnosis
+    let photoUrls: [String]
     let notes: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case parcelName = "parcel_name"
+        case plantNumber = "plant_number"
+        case technicianName = "technician_name"
+        case aiAnalysis = "ai_analysis"
+        case photoUrls = "photo_urls"
+        case notes
+    }
 }
