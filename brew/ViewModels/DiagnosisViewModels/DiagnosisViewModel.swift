@@ -13,18 +13,9 @@ class DiagnosisViewModel: ObservableObject {
     @Published var isAnalyzing = false
     @Published var errorMessage: String?
     @Published var showError = false
-    @Published var isTestMode = false
     @Published var analysisCompleted = false
-    
-    private let diagnosticService = PlantDiagnosticService.shared
-    
-    // MARK: - Test Mode Toggle
-    func toggleTestMode() {
-        isTestMode.toggle()
-        print("🧪 Test mode \(isTestMode ? "enabled" : "disabled")")
-    }
-    
-    // MARK: - Create Test Diagnosis
+
+    private let diagnosticService = PlantDiagnosticService.shared    // MARK: - Create Test Diagnosis
     func createTestDiagnosis(completion: (() -> Void)? = nil) {
         print("🧪 Creating test diagnosis...")
         
@@ -148,14 +139,10 @@ class DiagnosisViewModel: ObservableObject {
     }
     
     func analyzePhoto(request: PhotoAnalysisRequest) {
-        if isTestMode {
-            // In test mode, ignore the photo and create a test diagnosis
-            createTestDiagnosis()
-        } else {
-            // Original implementation would go here
-            print("Analyzing photo with ML model...")
-            // TODO: Implement actual ML analysis
-        }
+        // TODO: Implement actual ML analysis
+        print("Analyzing photo with ML model...")
+        // For now, create a mock diagnosis based on the photo
+        createTestDiagnosis()
     }
     
     func deleteDiagnosis(_ diagnosis: DiagnosisEntity) {

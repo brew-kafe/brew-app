@@ -31,17 +31,19 @@ struct DynamicDiagnosisGenerationView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // Dynamic background
-                LinearGradient(
-                    gradient: Gradient(colors: backgroundColors),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                // Simple background
+                Color(.systemBackground)
                 .ignoresSafeArea()
-                .animation(.easeInOut(duration: 2.0), value: currentStep)
                 
                 VStack(spacing: 30) {
-                    if !isGenerating {
+                    if showingResult {
+                        // Show diagnosis results after generation completes
+                        diagnosisResultsView
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .bottom)),
+                                removal: .opacity.combined(with: .move(edge: .top))
+                            ))
+                    } else if !isGenerating {
                         readyStateView
                     } else {
                         dynamicGenerationView
@@ -57,37 +59,26 @@ struct DynamicDiagnosisGenerationView: View {
     
     private var readyStateView: some View {
         VStack(spacing: 25) {
-            // Test Mode Indicator
-            if diagnosisViewModel.isTestMode {
-                testModeIndicator
-            }
-            
-            // Header with dynamic animation
+            // Header with simple design
             VStack(spacing: 15) {
                 ZStack {
                     Circle()
-                        .fill(LinearGradient(
-                            gradient: Gradient(colors: [.blue.opacity(0.3), .green.opacity(0.3)]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ))
+                        .fill(Color.blue.opacity(0.1))
                         .frame(width: 120, height: 120)
                     
-                    Image(systemName: diagnosisViewModel.isTestMode ? "flask.fill" : "sparkles")
+                    Image(systemName: "leaf.fill")
                         .font(.system(size: 50))
-                        .foregroundColor(diagnosisViewModel.isTestMode ? .orange : .blue)
+                        .foregroundColor(.green)
                 }
                 
-                Text(diagnosisViewModel.isTestMode ? "Test Mode Generation" : "AI Diagnosis Generation")
+                Text("Generación de Diagnóstico IA")
                     .font(.title)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
                 
-                Text(diagnosisViewModel.isTestMode ? 
-                     "Generate instant test diagnosis with mock data" : 
-                     "Generate comprehensive plant diagnosis using AI")
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.secondary)
+                Text("Genera un diagnóstico completo de la planta usando inteligencia artificial")
+                .multilineTextAlignment(.center)
+                .foregroundColor(.secondary)
             }
             
             // Image preview (if available)
@@ -168,24 +159,16 @@ struct DynamicDiagnosisGenerationView: View {
     private var generateButton: some View {
         Button(action: startGeneration) {
             HStack {
-                Image(systemName: diagnosisViewModel.isTestMode ? "wand.and.stars" : "sparkles")
-                Text(diagnosisViewModel.isTestMode ? "Generate Test Diagnosis" : "Start AI Analysis")
+                Image(systemName: "brain.head.profile")
+                Text("Iniciar Análisis IA")
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
             .padding()
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: diagnosisViewModel.isTestMode ? 
-                                     [.orange, .yellow] : [.blue, .purple]),
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
+            .background(Color.blue)
             .foregroundColor(.white)
             .cornerRadius(12)
         }
-        .scaleEffect(1.0 + sin(animationProgress) * 0.02)
     }
     
     private var dynamicHeader: some View {
@@ -280,29 +263,26 @@ struct DynamicDiagnosisGenerationView: View {
             case .analyzing:
                 stepContent(
                     icon: "magnifyingglass",
-                    title: "Analyzing Image",
-                    description: diagnosisViewModel.isTestMode ? 
-                        "Processing test data..." : "Examining plant characteristics and symptoms"
+                    title: "Analizando Imagen",
+                    description: "Examinando características y síntomas de la planta"
                 )
             case .identifying:
                 stepContent(
                     icon: "leaf.fill",
-                    title: "Identifying Issues",
-                    description: diagnosisViewModel.isTestMode ? 
-                        "Generating mock deficiencies..." : "Detecting potential plant health issues"
+                    title: "Identificando Problemas",
+                    description: "Detectando posibles problemas de salud de la planta"
                 )
             case .generating:
                 stepContent(
                     icon: "brain.head.profile",
-                    title: "Generating Diagnosis",
-                    description: diagnosisViewModel.isTestMode ? 
-                        "Creating test recommendations..." : "Creating comprehensive diagnosis and recommendations"
+                    title: "Generando Diagnóstico",
+                    description: "Creando diagnóstico completo y recomendaciones"
                 )
             case .complete:
                 stepContent(
                     icon: "checkmark.circle.fill",
-                    title: "Analysis Complete",
-                    description: "Ready to view detailed results"
+                    title: "Análisis Completo",
+                    description: "Listo para ver resultados detallados"
                 )
             }
             
@@ -409,12 +389,12 @@ struct DynamicDiagnosisGenerationView: View {
             
             // Current Step Detailed Tasks
             VStack(alignment: .leading, spacing: 8) {
-                Text("Current Step: \(currentStep.title)")
+                Text("Paso Actual: \(currentStep.title)")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.blue)
                 
-                ForEach(currentStep.detailedTasks(isTestMode: diagnosisViewModel.isTestMode), id: \.self) { task in
+                ForEach(currentStep.detailedTasks(), id: \.self) { task in
                     HStack(spacing: 8) {
                         Image(systemName: task == currentTask ? "gearshape.2.fill" : "circle")
                             .foregroundColor(task == currentTask ? .blue : .gray)
@@ -467,7 +447,7 @@ struct DynamicDiagnosisGenerationView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color(UIColor.systemBackground))
+                .fill(.background)
                 .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         )
         .transition(.asymmetric(
@@ -491,6 +471,94 @@ struct DynamicDiagnosisGenerationView: View {
         }
     }
     
+    // MARK: - Diagnosis Results View
+    
+    private var diagnosisResultsView: some View {
+        VStack(spacing: 20) {
+            // Success indicator
+            VStack(spacing: 12) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 60))
+                    .foregroundColor(.green)
+                    .scaleEffect(1.0)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.6), value: currentStep)
+                
+                Text("Diagnosis Complete!")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+            }
+            
+            // Diagnosis summary
+            if let diagnosis = diagnosisViewModel.diagnoses.first {
+                VStack(spacing: 16) {
+                    DiagnosisResultCard(diagnosis: diagnosis)
+                    
+                    // Quick insights
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "leaf.fill")
+                                .foregroundColor(detectionStateColor(diagnosis.detectionState))
+                            Text("Health Status: \(diagnosis.detectionState.capitalized)")
+                                .fontWeight(.medium)
+                            Spacer()
+                        }
+                        
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            Text("Primary Issue: \(diagnosis.primaryDeficiency)")
+                                .fontWeight(.medium)
+                            Spacer()
+                        }
+                        
+                        if let confidence = diagnosis.aiConfidence {
+                            HStack {
+                                Image(systemName: "brain.head.profile")
+                                    .foregroundColor(.blue)
+                                Text("AI Confidence: \(Int(confidence * 100))%")
+                                    .fontWeight(.medium)
+                                Spacer()
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(.regularMaterial)
+                    )
+                }
+            }
+            
+            Button(action: {
+                handleViewDetailsAction()
+            }) {
+                Text("View Full Details")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.blue)
+                    )
+            }
+            .disabled(diagnosisViewModel.diagnoses.isEmpty)
+        }
+        .padding()
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func detectionStateColor(_ state: String) -> Color {
+        switch state.lowercased() {
+        case "optimal": return .green
+        case "moderate": return .orange
+        case "danger": return .red
+        default: return .gray
+        }
+    }
+    
     // MARK: - Methods
     
     private func startIdleAnimation() {
@@ -509,7 +577,7 @@ struct DynamicDiagnosisGenerationView: View {
     }
     
     private func progressThroughSteps() {
-        let stepDuration: Double = diagnosisViewModel.isTestMode ? 1.2 : 3.0
+        let stepDuration: Double = 3.0
         let steps = GenerationStep.allCases
         
         for (index, step) in steps.enumerated() {
@@ -517,7 +585,7 @@ struct DynamicDiagnosisGenerationView: View {
                 withAnimation(.easeInOut(duration: 0.5)) {
                     currentStep = step
                     animationProgress = Double(index + 1) / Double(steps.count)
-                    generationProgress = step.progressMessage(isTestMode: diagnosisViewModel.isTestMode)
+                    generationProgress = step.progressMessage()
                 }
                 
                 // Start detailed task progression for this step
@@ -534,8 +602,8 @@ struct DynamicDiagnosisGenerationView: View {
     }
     
     private func progressThroughDetailedTasks(for step: GenerationStep) {
-        let tasks = step.detailedTasks(isTestMode: diagnosisViewModel.isTestMode)
-        let taskDuration: Double = diagnosisViewModel.isTestMode ? 0.2 : 0.5
+        let tasks = step.detailedTasks()
+        let taskDuration: Double = 0.5
         
         for (taskIndex, task) in tasks.enumerated() {
             DispatchQueue.main.asyncAfter(deadline: .now() + Double(taskIndex) * taskDuration) {
@@ -565,153 +633,191 @@ struct DynamicDiagnosisGenerationView: View {
     }
     
     private func completeGeneration() {
-        if diagnosisViewModel.isTestMode {
-            // Generate test diagnosis
-            diagnosisViewModel.createTestDiagnosis { [weak diagnosisViewModel] in
-                if let latestDiagnosis = diagnosisViewModel?.diagnoses.first {
-                    onCompletion(latestDiagnosis)
+        guard !showingResult else { return } // Prevent multiple calls
+        
+        // TODO: Integrate with real AI diagnosis service
+        // For now, use mock diagnosis generation
+        diagnosisViewModel.createTestDiagnosis {
+            DispatchQueue.main.async {
+                showingResult = true
+            }
+        }
+    }
+    
+    // MARK: - Generation Steps
+    
+    enum GenerationStep: Int, CaseIterable {
+        case analyzing = 0
+        case identifying = 1
+        case generating = 2
+        case complete = 3
+        
+        var title: String {
+            switch self {
+            case .analyzing: return "Analizando Muestra"
+            case .identifying: return "Identificando Problemas"
+            case .generating: return "Generando Diagnóstico"
+            case .complete: return "Análisis Completo"
+            }
+        }
+        
+        var shortTitle: String {
+            switch self {
+            case .analyzing: return "Analizar"
+            case .identifying: return "Identificar"
+            case .generating: return "Generar"
+            case .complete: return "Completar"
+            }
+        }
+        
+        var icon: String {
+            switch self {
+            case .analyzing: return "magnifyingglass.circle.fill"
+            case .identifying: return "leaf.fill"
+            case .generating: return "brain.head.profile"
+            case .complete: return "checkmark.circle.fill"
+            }
+        }
+        
+        func progressMessage() -> String {
+            switch self {
+            case .analyzing: return "Examinando características de la planta..."
+            case .identifying: return "Detectando posibles problemas de salud..."
+            case .generating: return "Creando análisis completo..."
+            case .complete: return "¡Diagnóstico completado!"
+            }
+        }
+        
+        func detailedTasks() -> [String] {
+            switch self {
+            case .analyzing:
+                return [
+                    "Procesando imágenes capturadas",
+                    "Extrayendo características de la planta",
+                    "Analizando patrones de color",
+                    "Midiendo características de las hojas",
+                    "Evaluando estructura general"
+                ]
+            case .identifying:
+                return [
+                    "Ejecutando algoritmos de detección de enfermedades",
+                    "Analizando deficiencias nutricionales",
+                    "Verificando indicadores de plagas",
+                    "Evaluando patrones de crecimiento",
+                    "Consultando base de datos de plantas"
+                ]
+            case .generating:
+                return [
+                    "Compilando resultados del diagnóstico",
+                    "Generando recomendaciones de tratamiento",
+                    "Creando plan de acción",
+                    "Formateando reporte completo",
+                    "Validando resultados finales"
+                ]
+            case .complete:
+                return [
+                    "Reporte de diagnóstico listo",
+                    "Recomendaciones compiladas",
+                    "Plan de acción preparado"
+                ]
+            }
+        }
+    }
+    
+    // MARK: - Diagnosis Result Card
+    
+    private struct DiagnosisResultCard: View {
+        let diagnosis: DiagnosisEntity
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(diagnosis.parcelName)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        if let plantNumber = diagnosis.plantNumber {
+                            Text("Planta: \(plantNumber)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(diagnosis.detectionState.capitalized)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                Capsule()
+                                    .fill(detectionStateColor(diagnosis.detectionState).opacity(0.2))
+                            )
+                            .foregroundColor(detectionStateColor(diagnosis.detectionState))
+                        
+                        Text(formatDate(diagnosis.diagnosisDate))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                if let description = diagnosis.aiDescription {
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(3)
                 }
             }
-        } else {
-            // TODO: Integrate with real AI diagnosis service
-            // For now, fallback to test diagnosis
-            diagnosisViewModel.createTestDiagnosis { [weak diagnosisViewModel] in
-                if let latestDiagnosis = diagnosisViewModel?.diagnoses.first {
-                    onCompletion(latestDiagnosis)
-                }
-            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.background)
+                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+            )
         }
-    }
-}
-
-// MARK: - Generation Steps
-
-enum GenerationStep: Int, CaseIterable {
-    case analyzing = 0
-    case identifying = 1
-    case generating = 2
-    case complete = 3
-    
-    var title: String {
-        switch self {
-        case .analyzing: return "Analyzing Sample"
-        case .identifying: return "Identifying Issues"
-        case .generating: return "Generating Diagnosis"
-        case .complete: return "Analysis Complete"
+        
+        private func formatDate(_ date: Date) -> String {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .short
+            formatter.timeStyle = .short
+            return formatter.string(from: date)
         }
-    }
-    
-    var shortTitle: String {
-        switch self {
-        case .analyzing: return "Analyze"
-        case .identifying: return "Identify"
-        case .generating: return "Generate"
-        case .complete: return "Complete"
-        }
-    }
-    
-    var icon: String {
-        switch self {
-        case .analyzing: return "magnifyingglass.circle.fill"
-        case .identifying: return "leaf.fill"
-        case .generating: return "brain.head.profile"
-        case .complete: return "checkmark.circle.fill"
-        }
-    }
-    
-    func progressMessage(isTestMode: Bool) -> String {
-        if isTestMode {
-            switch self {
-            case .analyzing: return "Processing test image data..."
-            case .identifying: return "Selecting mock deficiency scenario..."
-            case .generating: return "Creating test recommendations..."
-            case .complete: return "Test diagnosis ready!"
-            }
-        } else {
-            switch self {
-            case .analyzing: return "Examining plant characteristics..."
-            case .identifying: return "Detecting potential health issues..."
-            case .generating: return "Creating comprehensive analysis..."
-            case .complete: return "Diagnosis complete!"
+        
+        private func detectionStateColor(_ state: String) -> Color {
+            switch state.lowercased() {
+            case "optimal": return .green
+            case "moderate": return .orange
+            case "danger": return .red
+            default: return .gray
             }
         }
     }
     
-    func detailedTasks(isTestMode: Bool) -> [String] {
-        switch self {
-        case .analyzing:
-            if isTestMode {
-                return [
-                    "Loading test sample data",
-                    "Applying mock environmental conditions",
-                    "Simulating image processing",
-                    "Generating synthetic measurements",
-                    "Preparing analysis pipeline"
-                ]
-            } else {
-                return [
-                    "Processing captured images",
-                    "Extracting plant features",
-                    "Analyzing color patterns",
-                    "Measuring leaf characteristics",
-                    "Assessing overall structure"
-                ]
+    // MARK: - Preview
+    
+    struct DynamicDiagnosisGenerationView_Previews: PreviewProvider {
+        static var previews: some View {
+            DynamicDiagnosisGenerationView(
+                diagnosisViewModel: DiagnosisViewModel(),
+                capturedImage: nil
+            ) { _ in
+                // Preview completion handler
             }
-        case .identifying:
-            if isTestMode {
-                return [
-                    "Running mock disease detection",
-                    "Simulating nutrient analysis",
-                    "Generating test deficiency patterns",
-                    "Creating sample health metrics",
-                    "Preparing diagnostic results"
-                ]
-            } else {
-                return [
-                    "Running disease detection algorithms",
-                    "Analyzing nutrient deficiencies",
-                    "Checking for pest indicators",
-                    "Evaluating growth patterns",
-                    "Cross-referencing plant database"
-                ]
-            }
-        case .generating:
-            if isTestMode {
-                return [
-                    "Compiling test diagnosis report",
-                    "Generating mock recommendations",
-                    "Creating sample treatment plan",
-                    "Formatting test results",
-                    "Finalizing demo report"
-                ]
-            } else {
-                return [
-                    "Compiling diagnosis results",
-                    "Generating treatment recommendations",
-                    "Creating action plan",
-                    "Formatting comprehensive report",
-                    "Validating final results"
-                ]
-            }
-        case .complete:
-            return [
-                "Diagnosis report ready",
-                "Recommendations compiled",
-                "Action plan prepared"
-            ]
         }
     }
-}
-
-// MARK: - Preview
-
-struct DynamicDiagnosisGenerationView_Previews: PreviewProvider {
-    static var previews: some View {
-        DynamicDiagnosisGenerationView(
-            diagnosisViewModel: DiagnosisViewModel(),
-            capturedImage: nil
-        ) { _ in
-            // Preview completion handler
+    
+    private func handleViewDetailsAction() {
+        guard let diagnosis = diagnosisViewModel.diagnoses.first else {
+            print("⚠️ No diagnosis available to display")
+            return
+        }
+        
+        // Ensure we're on main thread for UI updates
+        DispatchQueue.main.async {
+            onCompletion(diagnosis)
         }
     }
 }

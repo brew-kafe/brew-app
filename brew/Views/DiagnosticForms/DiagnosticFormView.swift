@@ -41,28 +41,6 @@ struct DiagnosticFormView: View {
         NavigationView {
             ZStack {
                 Form {
-                    // Test Mode Indicator
-                    if viewModel.isTestMode {
-                        Section {
-                            HStack {
-                                Image(systemName: "flask.fill")
-                                    .foregroundColor(.orange)
-                                Text("Modo de Prueba Activo")
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.orange)
-                                Spacer()
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.orange)
-                            }
-                            .padding(.vertical, 4)
-                            .background(Color.orange.opacity(0.1))
-                            .cornerRadius(8)
-                        } footer: {
-                            Text("En modo de prueba, se generará un diagnóstico simulado sin usar la imagen.")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    
                     Section {
                         if let uiImage = UIImage(data: imageData) {
                             Image(uiImage: uiImage)
@@ -101,32 +79,6 @@ struct DiagnosticFormView: View {
                     }
                     
                     Section {
-                        Button(action: submitDiagnosis) {
-                            HStack {
-                                Spacer()
-                                if viewModel.isAnalyzing {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle())
-                                    Text(viewModel.isTestMode ? "Generando prueba..." : "Analizando...")
-                                        .fontWeight(.semibold)
-                                } else {
-                                    if viewModel.isTestMode {
-                                        HStack {
-                                            Image(systemName: "flask.fill")
-                                            Text("Generar Diagnóstico de Prueba")
-                                        }
-                                        .fontWeight(.semibold)
-                                    } else {
-                                        Text("Analizar Planta")
-                                            .fontWeight(.semibold)
-                                    }
-                                }
-                                Spacer()
-                            }
-                        }
-                        .disabled(viewModel.isAnalyzing)
-                        .foregroundColor(viewModel.isTestMode ? .orange : Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255))
-                        
                         // AI Diagnosis Generation Button
                         if #available(iOS 18.1, macOS 15.1, *),
                            let service = foundationModelsService,
@@ -136,7 +88,7 @@ struct DiagnosticFormView: View {
                                     Spacer()
                                     Image(systemName: "sparkles")
                                         .foregroundColor(.white)
-                                    Text("Generate AI Diagnosis")
+                                    Text("Generar diagnóstico")
                                         .fontWeight(.semibold)
                                         .foregroundColor(.white)
                                     Spacer()
@@ -144,7 +96,7 @@ struct DiagnosticFormView: View {
                                 .padding()
                                 .background(
                                     LinearGradient(
-                                        gradient: Gradient(colors: [.blue, .purple]),
+                                        colors: [Color.brown.opacity(0.8), Color.brown],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )

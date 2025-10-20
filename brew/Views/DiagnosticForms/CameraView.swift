@@ -11,9 +11,10 @@ import AVFoundation
 // MARK: - Main Camera View
 struct CameraView: View {
     @StateObject var camera = CameraModel()
-    @StateObject var viewModel = DiagnosisViewModel()
+    @StateObject var diagnosisViewModel = DiagnosisViewModel()
     @Environment(\.dismiss) var dismiss
-    @State private var showDiagnosticForm = false
+    @State private var showDynamicGeneration = false
+    @State private var selectedDiagnosis: DiagnosisEntity?
     
     var body: some View {
         ZStack {
@@ -99,12 +100,12 @@ struct CameraView: View {
                 if camera.isTaken {
                     Button(action: {
                         if camera.picData.count > 0 {
-                            showDiagnosticForm = true
+                            showDynamicGeneration = true
                         } else {
                             camera.reTake()
                         }
                     }) {
-                        Text("Diagnosticar")
+                        Text("Generate AI Diagnosis")
                             .font(.headline)
                             .foregroundColor(.white)
                             .padding(.horizontal, 28)
@@ -126,18 +127,21 @@ struct CameraView: View {
             .frame(maxWidth: .infinity)
             .padding(.bottom, 55)
         }
-        .sheet(isPresented: $showDiagnosticForm) {
-            DiagnosticFormView(
-                imageData: camera.picData,
-                viewModel: viewModel,
-                onComplete: {
-                    showDiagnosticForm = false
-                    dismiss()
-                }
-            )
+        .fullScreenCover(isPresented: $showDynamicGeneration) {
+            DynamicDiagnosisGenerationView(
+                diagnosisViewModel: diagnosisViewModel,
+                capturedImage: UIImage(data: camera.picData)
+            ) { generatedDiagnosis in
+                showDynamicGeneration = false
+                selectedDiagnosis = generatedDiagnosis
+                dismiss()
+            }
+        }
+        .sheet(item: $selectedDiagnosis) { diagnosis in
+            DiagnosticDetailView(diagnosis: diagnosis, viewModel: diagnosisViewModel)
+        }
         }
     }
-}
 
 // MARK: - Camera Preview (UIViewRepresentable)
 struct CameraPreview: UIViewRepresentable {

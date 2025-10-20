@@ -29,47 +29,17 @@ struct DiagnosticListView: View {
             }
             .navigationTitle("Diagnósticos")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: { 
-                        viewModel.toggleTestMode()
-                    }) {
-                        HStack {
-                            Image(systemName: viewModel.isTestMode ? "flask.fill" : "flask")
-                            Text(viewModel.isTestMode ? "Test" : "Normal")
-                        }
-                        .font(.caption)
-                        .foregroundColor(viewModel.isTestMode ? .orange : .gray)
-                    }
-                }
-                
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 12) {
-                        // Test Diagnosis Button (only show in test mode)
-                        if viewModel.isTestMode {
-                            Button(action: { 
-                                viewModel.createTestDiagnosis()
-                            }) {
-                                Image(systemName: "wand.and.stars")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(.white)
-                                    .padding(12)
-                                    .background(Circle().fill(Color.orange))
-                                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                            }
-                            .accessibilityLabel("Crear diagnóstico de prueba")
-                        }
-                        
-                        // Camera Button
-                        Button(action: { showCamera = true }) {
-                            Image(systemName: "camera.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(.white)
-                                .padding(12)
-                                .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
-                                .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        }
-                        .accessibilityLabel("Abrir cámara para diagnóstico")
+                    // Camera Button
+                    Button(action: { showCamera = true }) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 20))
+                            .foregroundColor(.white)
+                            .padding(12)
+                            .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
+                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
                     }
+                    .accessibilityLabel("Abrir cámara para diagnóstico")
                 }
             }
             .sheet(isPresented: $showCamera) {
