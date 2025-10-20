@@ -243,4 +243,3 @@ extension LocationDetailView {
         }
     }
 }
-

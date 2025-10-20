@@ -69,7 +69,7 @@ class APIService {
         }.resume()
     }
     
-    // MARK: - Create
+    // MARK: - Create   
     func registerUser(_ request: RegisterRequest, completion: @escaping (Result<UserDTO, APIError>) -> Void) {
         guard let url = URL(string: "\(baseURL)/register") else {
             completion(.failure(.invalidURL)); return

@@ -34,6 +34,7 @@ struct Location: Identifiable, Equatable {
     let coordinates: CLLocationCoordinate2D
     let description: String
     let imageNames: [String]
+    let status: String
     let link: String
     let kind: pinKind
     let metrics: plotMetrics
@@ -48,4 +49,3 @@ struct Location: Identifiable, Equatable {
         lhs.id == rhs.id
     }
 }
-
