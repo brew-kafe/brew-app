@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Combine
+import UIKit
 
 class DiagnosisViewModel: ObservableObject {
     @Published var diagnoses: [DiagnosisEntity] = []
@@ -15,7 +16,13 @@ class DiagnosisViewModel: ObservableObject {
     @Published var showError = false
     @Published var analysisCompleted = false
 
-    private let diagnosticService = PlantDiagnosticService.shared    // MARK: - Create Test Diagnosis
+    private let diagnosticService = PlantDiagnosticService.shared
+
+    // Foundation Models service (iOS 18.1+)
+    @available(iOS 18.1, macOS 15.1, *)
+    private lazy var foundationModelsService: FoundationModelsDiagnosisService = {
+        FoundationModelsDiagnosisService.shared
+    }()    // MARK: - Create Test Diagnosis
     func createTestDiagnosis(completion: (() -> Void)? = nil) {
         print("🧪 Creating test diagnosis...")
         
@@ -138,11 +145,126 @@ class DiagnosisViewModel: ObservableObject {
         return elements.sorted { $0.percentage > $1.percentage }
     }
     
-    func analyzePhoto(request: PhotoAnalysisRequest) {
-        // TODO: Implement actual ML analysis
-        print("Analyzing photo with ML model...")
-        // For now, create a mock diagnosis based on the photo
-        createTestDiagnosis()
+    // MARK: - Real Photo Analysis with CoreML
+    func analyzePhoto(request: PhotoAnalysisRequest, completion: @escaping (Result<[ClassificationResult], Error>) -> Void) {
+        guard let image = UIImage(data: request.imageData) else {
+            let error = NSError(domain: "DiagnosisViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to load image"])
+            completion(.failure(error))
+            return
+        }
+
+        isAnalyzing = true
+        analysisCompleted = false
+
+        diagnosticService.classifyImage(image) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isAnalyzing = false
+
+                switch result {
+                case .success(let classifications):
+                    self?.analysisCompleted = true
+                    completion(.success(classifications))
+
+                case .failure(let error):
+                    self?.errorMessage = error.localizedDescription
+                    self?.showError = true
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    // MARK: - Generate AI Diagnosis using Foundation Models
+    @available(iOS 18.1, macOS 15.1, *)
+    func generateAIDiagnosis(
+        from photoAnalysis: [ClassificationResult],
+        parcelName: String,
+        technicianName: String,
+        plantNumber: String? = nil,
+        additionalNotes: String = "",
+        completion: @escaping (Result<DiagnosisEntity, Error>) -> Void
+    ) {
+        Task {
+            do {
+                let parcelInfo = """
+                Parcel: \(parcelName)
+                Technician: \(technicianName)
+                \(plantNumber != nil ? "Plant Number: \(plantNumber!)" : "")
+                Additional Notes: \(additionalNotes.isEmpty ? "None" : additionalNotes)
+                """
+
+                let aiDiagnosis = try await foundationModelsService.generateDiagnosis(
+                    from: photoAnalysis,
+                    parcelInfo: parcelInfo,
+                    additionalNotes: additionalNotes
+                )
+
+                // Convert to DiagnosisEntity
+                let entity = DiagnosisEntity(
+                    parcelName: parcelName,
+                    plantNumber: plantNumber,
+                    technicianName: technicianName,
+                    primaryDeficiency: aiDiagnosis.primaryDeficiency,
+                    deficiencyElement: aiDiagnosis.deficiencyElement,
+                    detectionState: aiDiagnosis.detectionState,
+                    aiConfidence: aiDiagnosis.confidencePercentage / 100.0,
+                    aiDescription: aiDiagnosis.detailedDescription,
+                    aiRecommendations: aiDiagnosis.recommendations,
+                    allElements: aiDiagnosis.elementAnalysis.map { aiElement in
+                        ElementAnalysis(
+                            element: aiElement.element,
+                            percentage: aiElement.percentage,
+                            detectionState: DetectionState(rawValue: aiElement.detectionState) ?? .moderate,
+                            deficiencyLevel: aiElement.deficiencyLevel,
+                            recommendations: aiElement.recommendations
+                        )
+                    },
+                    photoURLs: [],
+                    diagnosisDate: Date(),
+                    createdAt: Date()
+                )
+
+                await MainActor.run {
+                    self.diagnoses.insert(entity, at: 0)
+                    self.analysisCompleted = true
+
+                    // Also persist to AIDiagnosisDataService (must be on MainActor)
+                    do {
+                        try AIDiagnosisDataService.shared.saveDiagnosis(
+                            aiDiagnosis,
+                            parcelName: parcelName,
+                            technicianName: technicianName,
+                            additionalNotes: additionalNotes.isEmpty ? nil : additionalNotes,
+                            photoUrls: []
+                        )
+                    } catch {
+                        print("Failed to save to AIDiagnosisDataService: \(error)")
+                    }
+
+                    completion(.success(entity))
+                }
+
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = "Failed to generate AI diagnosis: \(error.localizedDescription)"
+                    self.showError = true
+                    completion(.failure(error))
+                }
+            }
+        }
+    }
+
+    // MARK: - Check Foundation Models Availability
+    @MainActor
+    @available(iOS 18.1, macOS 15.1, *)
+    var isFoundationModelsAvailable: Bool {
+        foundationModelsService.isModelAvailable
+    }
+    
+    @MainActor
+    @available(iOS 18.1, macOS 15.1, *)
+    var foundationModelsAvailabilityMessage: String {
+        foundationModelsService.availabilityMessage
     }
     
     func deleteDiagnosis(_ diagnosis: DiagnosisEntity) {

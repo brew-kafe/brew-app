@@ -1,25 +1,39 @@
+//
+//  DiagnosticView.swift
+//  brew
+//
+//  Created by toño on 05/10/25.
+//
+
 import SwiftUI
 
 struct DiagnosticView: View {
     @StateObject var viewModel = DiagnosisViewModel()
-    @StateObject private var aiDataService = AIDiagnosisDataService.shared
     @State private var showCamera = false
-    @State private var showDynamicGeneration = false
-    @State private var capturedImageForGeneration: UIImage?
     @State private var selectedDiagnosis: DiagnosisEntity?
-    @State private var selectedAIDiagnosis: AIDiagnosisEntity?
-    @State private var selectedSegment = 0 // 0 = Regular, 1 = AI Diagnoses
+    @State private var showingDeleteAlert = false
+    @State private var diagnosisToDelete: DiagnosisEntity?
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                Text("Esto está abajo del título")
+            ZStack {
+                // Main content
+                if viewModel.diagnoses.isEmpty {
+                    emptyStateView
+                } else {
+                    diagnosisList
+                }
+
+                // Analyzing overlay
+                if viewModel.isAnalyzing {
+                    analyzingOverlay
+                }
             }
             .navigationTitle("Diagnósticos")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     // Camera Button
-                    Button(action: { 
+                    Button(action: {
                         showCamera = true
                     }) {
                         Image(systemName: "camera.fill")
@@ -33,194 +47,204 @@ struct DiagnosticView: View {
                 }
             }
             .sheet(isPresented: $showCamera) {
-                CameraView()
-            }
-            .fullScreenCover(isPresented: $showDynamicGeneration) {
-                DynamicDiagnosisGenerationView(
-                    diagnosisViewModel: viewModel,
-                    capturedImage: capturedImageForGeneration
-                ) { generatedDiagnosis in
-                    showDynamicGeneration = false
-                    // Optionally navigate to detail view
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        selectedDiagnosis = generatedDiagnosis
-                    }
-                }
+                CameraView(diagnosisViewModel: viewModel)
             }
             .sheet(item: $selectedDiagnosis) { diagnosis in
                 DiagnosticDetailView(diagnosis: diagnosis, viewModel: viewModel)
             }
-        }
-        .onAppear {
-            aiDataService.loadDiagnoses()
-        }
-    }
-    
-    // MARK: - Regular Diagnoses View
-    
-    private var regularDiagnosesView: some View {
-        VStack {
-            if viewModel.diagnoses.isEmpty {
-                emptyStateView(
-                    title: "No se han generado diagnósticos",
-                    subtitle: "Empieza con tomar una foto",
-                    systemImage: "doc.text"
-                )
-            } else {
-                List(viewModel.diagnoses) { diagnosis in
-                    Button {
-                        selectedDiagnosis = diagnosis
-                    } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(diagnosis.parcelName)
-                                    .font(.headline)
-                                Spacer()
-                                Text(dateFormatter.string(from: diagnosis.diagnosisDate))
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            Text(diagnosis.plantNumber ?? "N/A")
-                                .font(.subheadline)
-                            Text("Técnico: \(diagnosis.technicianName)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(diagnosis.primaryDeficiency)
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 8)
+            .alert("Eliminar Diagnóstico", isPresented: $showingDeleteAlert) {
+                Button("Cancelar", role: .cancel) { }
+                Button("Eliminar", role: .destructive) {
+                    if let diagnosis = diagnosisToDelete {
+                        viewModel.deleteDiagnosis(diagnosis)
                     }
                 }
-                .listStyle(.plain)
+            } message: {
+                Text("¿Estás seguro de que deseas eliminar este diagnóstico? Esta acción no se puede deshacer.")
             }
         }
     }
-    
+
+    // MARK: - Diagnosis List
+
+    private var diagnosisList: some View {
+        List {
+            ForEach(viewModel.diagnoses) { diagnosis in
+                DiagnosisRow(diagnosis: diagnosis)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedDiagnosis = diagnosis
+                    }
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            diagnosisToDelete = diagnosis
+                            showingDeleteAlert = true
+                        } label: {
+                            Label("Eliminar", systemImage: "trash")
+                        }
+                    }
+            }
+        }
+        .listStyle(.plain)
+    }
+
     // MARK: - Empty State View
-    
-    private func emptyStateView(title: String, subtitle: String, systemImage: String) -> some View {
+
+    private var emptyStateView: some View {
         VStack(spacing: 20) {
-            Image(systemName: systemImage)
-                .font(.system(size: 60))
-                .foregroundColor(.gray)
-            
-            Text(title)
+            Image(systemName: "camera.metering.unknown")
+                .font(.system(size: 70))
+                .foregroundColor(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255).opacity(0.5))
+
+            Text("No hay diagnósticos")
                 .font(.title2)
                 .fontWeight(.semibold)
-            
-            Text(subtitle)
+
+            Text("Toca el botón de cámara para iniciar\ntu primer diagnóstico de plantas")
+                .font(.body)
+                .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding(.horizontal)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
     }
 
-    private var dateFormatter: DateFormatter {
-        let df = DateFormatter()
-        df.dateStyle = .medium
-        df.timeStyle = .short
-        return df
-    }
-}
+    // MARK: - Analyzing Overlay
 
-// MARK: - Supporting Views
+    private var analyzingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
 
-struct StatCard: View {
-    let title: String
-    let value: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(color)
-            
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
+            VStack(spacing: 20) {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .tint(.white)
 
-struct AIDiagnosisRowCompact: View {
-    let diagnosis: AIDiagnosisEntity
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(diagnosis.title)
+                Text("Analizando imagen...")
                     .font(.headline)
-                    .lineLimit(1)
-                
-                Spacer()
-                
-                Text("\(Int(diagnosis.confidencePercentage))%")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(confidenceColor.opacity(0.2))
-                    .foregroundColor(confidenceColor)
-                    .cornerRadius(4)
+                    .foregroundColor(.white)
+
+                Text("Por favor espera")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.8))
             }
-            
+            .padding(40)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255))
+            )
+        }
+    }
+}
+
+// MARK: - Diagnosis Row View
+
+private struct DiagnosisRow: View {
+    let diagnosis: DiagnosisEntity
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Header with parcel name and status
             HStack {
                 Text(diagnosis.parcelName)
-                    .font(.subheadline)
+                    .font(.headline)
                     .foregroundColor(.primary)
-                
+
                 Spacer()
-                
-                Text(diagnosis.createdAt, style: .date)
+
+                HStack(spacing: 4) {
+                    Image(systemName: statusIcon)
+                        .font(.title2)
+                        .foregroundColor(statusColor)
+
+                    Text(diagnosis.detectionState.capitalized)
+                        .font(.caption)
+                        .foregroundColor(statusColor)
+                        .fontWeight(.medium)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(statusColor.opacity(0.1))
+                .cornerRadius(8)
+            }
+
+            // Plant number and date
+            HStack {
+                Label(diagnosis.plantNumber ?? "N/A", systemImage: "leaf.fill")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                Label(formattedDate, systemImage: "calendar")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
-            
-            Text("Técnico: \(diagnosis.technicianName)")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            HStack {
-                Text(diagnosis.primaryDeficiency)
-                    .font(.caption)
+
+            // Element count
+            if !diagnosis.allElements.isEmpty {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(.orange)
+
+                    Text("\(diagnosis.allElements.count) deficiencia(s) detectada(s)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            // Description
+            if let description = diagnosis.aiDescription {
+                Text(description)
+                    .font(.subheadline)
                     .foregroundColor(.secondary)
-                
-                Spacer()
-                
-                Text(diagnosis.detectionState.capitalized)
+                    .lineLimit(2)
+            }
+
+            // Technician
+            HStack {
+                Image(systemName: "person.fill")
+                    .font(.system(size: 10))
+                    .foregroundColor(.gray)
+                Text(diagnosis.technicianName)
                     .font(.caption)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(stateColor.opacity(0.2))
-                    .foregroundColor(stateColor)
-                    .cornerRadius(4)
+                    .foregroundColor(.gray)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
     }
-    
-    private var confidenceColor: Color {
-        let confidence = diagnosis.confidencePercentage / 100
-        if confidence >= 0.8 { return .green }
-        else if confidence >= 0.6 { return .orange }
-        else { return .red }
+
+    // MARK: - Computed Properties
+
+    private var statusIcon: String {
+        switch diagnosis.detectionState.lowercased() {
+        case "danger": return "exclamationmark.triangle.fill"
+        case "moderate": return "exclamationmark.circle.fill"
+        case "optimal": return "checkmark.circle.fill"
+        default: return "circle.fill"
+        }
     }
-    
-    private var stateColor: Color {
-        switch diagnosis.detectionState {
+
+    private var statusColor: Color {
+        switch diagnosis.detectionState.lowercased() {
         case "danger": return .red
         case "moderate": return .orange
         case "optimal": return .green
         default: return .gray
         }
     }
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        formatter.locale = Locale(identifier: "es_MX")
+        return formatter.string(from: diagnosis.diagnosisDate)
+    }
 }
+
+// MARK: - Preview
 
 #Preview {
     DiagnosticView()
