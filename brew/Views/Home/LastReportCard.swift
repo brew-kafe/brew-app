@@ -17,10 +17,10 @@ struct LastReportCard: View {
                 .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
-            
+
             Divider()
-                .padding(.horizontal, -16)
-            
+                .padding(.horizontal, -16)   // mismo ancho que la tarjeta
+
             // Report Content
             VStack(alignment: .leading, spacing: 8) {
                 // Status and Parcel Name
@@ -29,32 +29,45 @@ struct LastReportCard: View {
                         .foregroundColor(report.statusSwiftUIColor)
                         .font(.system(size: 20))
                         .frame(width: 24, height: 24)
-                    
+
                     VStack(alignment: .leading, spacing: 2) {
+                        // Permitir 2 líneas para el nombre de la parcela
                         Text(report.parcelName)
                             .font(.headline)
-                            .lineLimit(1)
                             .foregroundColor(.primary)
-                        
+                            .lineLimit(2)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(2) // da prioridad a este texto para que no lo compriman
+
+                        // Permitir más líneas para el diagnóstico (p.ej. 3)
                         Text(report.diagnosis)
                             .font(.caption)
                             .foregroundColor(report.statusSwiftUIColor)
-                            .lineLimit(2)
+                            .lineLimit(3)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
                     }
-                    
-                    Spacer()
+
+                    // No forzamos compresión con un Spacer grande
+                    Spacer(minLength: 0)
                 }
-                
-                Spacer()
-                
+
+                Spacer(minLength: 0)
+
                 // Timestamp
                 Text(report.timestamp)
                     .font(.caption)
                     .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(16)
-        .frame(maxWidth: .infinity, minHeight: 140, maxHeight: 180)
+        // Quitamos maxHeight para que pueda crecer si hay más texto;
+        //
+        .frame(maxWidth: .infinity, minHeight: 190)
         .background(Color(.systemGray6))
         .cornerRadius(12)
         .shadow(radius: 3)

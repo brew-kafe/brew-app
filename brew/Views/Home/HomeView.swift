@@ -16,7 +16,7 @@ struct HomeView: View  {
                 VStack(spacing: 20) {
                     // MARK: - Header
                     HStack {
-                        Text("Bienvenido a Brew")
+                        Text("Bienvenido")
                             .font(.system(size: 35, weight: .bold))
                             .foregroundColor(.primary)
                         
@@ -31,6 +31,7 @@ struct HomeView: View  {
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
+                    
                     
                     // MARK: - Card "Mis Parcelas"
                     PlotStateChart()
