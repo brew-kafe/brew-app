@@ -25,7 +25,7 @@ struct DashboardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Dashboard Header¨_
+                // Dashboard Header
                 HStack {
                     Text("Tablero de Control")
                         .font(.largeTitle)
