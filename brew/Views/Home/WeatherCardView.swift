@@ -2,29 +2,29 @@
 //  WeatherCardView.swift
 //  brew
 //
-//  Created by Monserrath Valenzuela on 11/09/25.
 
 import SwiftUI
 import CoreLocation
 
 // MARK: - API Response Models
+
 struct OpenWeatherResponse: Codable {
     let main: MainWeather
     let weather: [WeatherCondition]
     let name: String
-    
+
     struct MainWeather: Codable {
         let temp: Double
         let tempMin: Double
         let tempMax: Double
-        
+
         enum CodingKeys: String, CodingKey {
             case temp
             case tempMin = "temp_min"
             case tempMax = "temp_max"
         }
     }
-    
+
     struct WeatherCondition: Codable {
         let main: String
         let description: String
@@ -32,15 +32,31 @@ struct OpenWeatherResponse: Codable {
     }
 }
 
+/// Pronóstico en bloques de 3h (usado para calcular Min/Máx reales del día)
 struct ForecastResponse: Codable {
     let list: [ForecastItem]
-    
+
     struct ForecastItem: Codable {
-        let pop: Double // Probability of precipitation
+        let dt: TimeInterval
+        let main: Main
+        let pop: Double? // 0..1 probabilidad de precipitación
+
+        struct Main: Codable {
+            let temp: Double
+            let tempMin: Double
+            let tempMax: Double
+
+            enum CodingKeys: String, CodingKey {
+                case temp
+                case tempMin = "temp_min"
+                case tempMax = "temp_max"
+            }
+        }
     }
 }
 
-// MARK: - Weather Data Model
+// MARK: - Weather Data Model (lo que consume la UI)
+
 struct WeatherData: Codable {
     let temperature: Int
     let condition: String
@@ -49,7 +65,7 @@ struct WeatherData: Codable {
     let minTemp: Int
     let rainProbability: Int
     let cityName: String
-    
+
     static let sample = WeatherData(
         temperature: 24,
         condition: "Nublado",
@@ -62,100 +78,108 @@ struct WeatherData: Codable {
 }
 
 // MARK: - Weather Service
+
 @MainActor
 class OpenWeatherService: ObservableObject {
+    // Tu API Key
     private let apiKey = "0a4404e22f52ce17fd8db4923b733116"
     private let baseURL = "https://api.openweathermap.org/data/2.5"
-    
+
     @Published var weatherData: WeatherData?
     @Published var isLoading = false
     @Published var error: String?
-    
+
     private let locationProvider = WeatherLocationProvider()
-    
-    // MARK: Fetch Weather
+
+    /// Carga clima. Si no pasas lat/lon usa la ubicación del usuario.
     func fetchWeather(latitude: Double? = nil, longitude: Double? = nil) async {
         isLoading = true
         error = nil
-        
+
         do {
+            // Ubicación
             let location: CLLocation
-            
             if let lat = latitude, let lon = longitude {
                 location = CLLocation(latitude: lat, longitude: lon)
             } else {
                 location = try await requestUserLocation()
             }
-            
-            print("Using coords: \(location.coordinate.latitude), \(location.coordinate.longitude)")
-            
-            // URLSession Config
+
+            // Sesión con timeouts
             let config = URLSessionConfiguration.default
             config.timeoutIntervalForRequest = 20
             config.timeoutIntervalForResource = 30
             let session = URLSession(configuration: config)
-            
-            // Fetch current weather
+
+            // Clima actual
             let weatherURL = "\(baseURL)/weather?lat=\(location.coordinate.latitude)&lon=\(location.coordinate.longitude)&appid=\(apiKey)&units=metric&lang=es"
-            guard let url = URL(string: weatherURL) else { throw WeatherError.invalidURL }
-            
-            print("Requesting: \(weatherURL)")
-            
-            let (weatherData, response) = try await session.data(from: url)
-            if let httpResponse = response as? HTTPURLResponse {
-                print("HTTP status: \(httpResponse.statusCode)")
+            guard let urlWeather = URL(string: weatherURL) else { throw WeatherError.invalidURL }
+
+            let (wData, wResp) = try await session.data(from: urlWeather)
+            if let http = wResp as? HTTPURLResponse, http.statusCode >= 400 {
+                throw WeatherError.http(code: http.statusCode)
             }
-            
-            let weatherResponse = try JSONDecoder().decode(OpenWeatherResponse.self, from: weatherData)
-            print("Weather: \(weatherResponse.main.temp)°C — \(weatherResponse.name)")
-            
-            // Fetch forecast
-            let forecastURL = "\(baseURL)/forecast?lat=\(location.coordinate.latitude)&lon=\(location.coordinate.longitude)&appid=\(apiKey)&units=metric&cnt=8"
-            let (forecastData, _) = try await session.data(from: URL(string: forecastURL)!)
-            let forecastResponse = try JSONDecoder().decode(ForecastResponse.self, from: forecastData)
-            
-            // Rain probability average
-            let avgRainProb = forecastResponse.list.reduce(0.0) { $0 + $1.pop } / Double(forecastResponse.list.count)
-            
-            // Convert to model
+            let weatherResponse = try JSONDecoder().decode(OpenWeatherResponse.self, from: wData)
+
+            // 4) Pronóstico (para Min/Máx reales del día y POP)
+            //    Tomamos los próximos 8 bloques (~24h) para min/máx y POP promedio
+            let forecastURL = "\(baseURL)/forecast?lat=\(location.coordinate.latitude)&lon=\(location.coordinate.longitude)&appid=\(apiKey)&units=metric&lang=es&cnt=12"
+            guard let urlForecast = URL(string: forecastURL) else { throw WeatherError.invalidURL }
+
+            let (fData, fResp) = try await session.data(from: urlForecast)
+            if let http = fResp as? HTTPURLResponse, http.statusCode >= 400 {
+                throw WeatherError.http(code: http.statusCode)
+            }
+            let forecastResponse = try JSONDecoder().decode(ForecastResponse.self, from: fData)
+
+            let nextDaySlices = Array(forecastResponse.list.prefix(8)) // ~24h
+            let dailyMin = nextDaySlices.map { $0.main.tempMin }.min() ?? weatherResponse.main.tempMin
+            let dailyMax = nextDaySlices.map { $0.main.tempMax }.max() ?? weatherResponse.main.tempMax
+            let avgRainProb = nextDaySlices.map { $0.pop ?? 0.0 }.reduce(0.0, +) / Double(max(nextDaySlices.count, 1))
+
+            // Mapea a modelo de UI
             let newWeather = WeatherData(
                 temperature: Int(weatherResponse.main.temp.rounded()),
                 condition: weatherResponse.weather.first?.description.capitalized ?? "Desconocido",
                 icon: mapWeatherIcon(weatherResponse.weather.first?.icon ?? "01d"),
-                maxTemp: Int(weatherResponse.main.tempMax.rounded()),
-                minTemp: Int(weatherResponse.main.tempMin.rounded()),
+                maxTemp: Int(dailyMax.rounded()),
+                minTemp: Int(dailyMin.rounded()),
                 rainProbability: Int((avgRainProb * 100).rounded()),
                 cityName: weatherResponse.name
             )
-            
+
             self.weatherData = newWeather
-            saveToCache(newWeather)
             isLoading = false
-            
-        } catch let error as URLError {
-            print("Network error: \(error.localizedDescription)")
+        } catch let urlError as URLError {
             self.error = "Error de conexión. Verifica tu internet."
-            if self.weatherData == nil { self.weatherData = loadFromCache() ?? WeatherData.sample }
+            if self.weatherData == nil { self.weatherData = WeatherData.sample }
+            isLoading = false
+            print("URLError:", urlError)
+        } catch WeatherError.invalidURL {
+            self.error = "URL inválida."
+            if self.weatherData == nil { self.weatherData = WeatherData.sample }
+            isLoading = false
+        } catch WeatherError.http(let code) {
+            self.error = "Error del servidor (\(code))."
+            if self.weatherData == nil { self.weatherData = WeatherData.sample }
             isLoading = false
         } catch {
-            print("Error: \(error.localizedDescription)")
-            self.error = "No se pudo obtener el clima"
-            if self.weatherData == nil { self.weatherData = loadFromCache() ?? WeatherData.sample }
+            self.error = "No se pudo obtener el clima."
+            if self.weatherData == nil { self.weatherData = WeatherData.sample }
             isLoading = false
+            print("Error:", error.localizedDescription)
         }
     }
-    
-    // MARK: Location
+
     private func requestUserLocation() async throws -> CLLocation {
-        try await withCheckedThrowingContinuation { continuation in
+        try await withCheckedThrowingContinuation { cont in
             locationProvider.requestOneShotLocation(
-                onLocation: { location in continuation.resume(returning: location) },
-                onDenied: { continuation.resume(throwing: WeatherError.locationDenied) }
+                onLocation: { loc in cont.resume(returning: loc) },
+                onDenied: { cont.resume(throwing: WeatherError.locationDenied) }
             )
         }
     }
-    
-    // MARK: Icon mapping
+
     private func mapWeatherIcon(_ iconCode: String) -> String {
         switch iconCode {
         case "01d": return "sun.max.fill"
@@ -173,29 +197,16 @@ class OpenWeatherService: ObservableObject {
         default: return "cloud.fill"
         }
     }
-    
+
     enum WeatherError: Error {
         case invalidURL
         case locationDenied
-    }
-    
-    // MARK: Cache methods
-    private func saveToCache(_ data: WeatherData) {
-        if let encoded = try? JSONEncoder().encode(data) {
-            UserDefaults.standard.set(encoded, forKey: "cachedWeather")
-        }
-    }
-    
-    private func loadFromCache() -> WeatherData? {
-        if let saved = UserDefaults.standard.data(forKey: "cachedWeather"),
-           let decoded = try? JSONDecoder().decode(WeatherData.self, from: saved) {
-            return decoded
-        }
-        return nil
+        case http(code: Int)
     }
 }
 
-// MARK: - WeatherCard Component
+// MARK: - WeatherCard Component (simple + chips minimalistas)
+
 struct WeatherCard: View {
     let latitude: Double?
     let longitude: Double?
@@ -213,10 +224,11 @@ struct WeatherCard: View {
             Text("Clima")
                 .font(.title3).bold()
                 .foregroundColor(.primary)
-            
+
+            // Divider a todo el ancho de la tarjeta
             Divider()
                 .frame(maxWidth: .infinity)
-                    .padding(.horizontal, -16)
+                .padding(.horizontal, -16)
 
             if let w = weatherService.weatherData {
                 // Icono + Temperatura
@@ -231,26 +243,25 @@ struct WeatherCard: View {
                         .foregroundColor(.primary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
+
+                    Spacer(minLength: 0)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
+
                 // Condición y Ciudad
                 VStack(alignment: .leading, spacing: 2) {
                     Text(w.condition)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    
+
                     Text(w.cityName)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 4)
-                .padding(.bottom,-7)
 
-                // Chips en fila
+                // Chips minimalistas (horizontales, como te gustaron)
                 HStack(spacing: 8) {
                     compactChip(icon: "arrow.up", text: "\(w.maxTemp)°")
                     compactChip(icon: "arrow.down", text: "\(w.minTemp)°")
@@ -281,7 +292,7 @@ struct WeatherCard: View {
         }
     }
 
-    // Ícono con tintes personalizados
+    // Ícono con tintes personalizados (para que la luna no se pierda)
     @ViewBuilder
     private func weatherIcon(symbol: String) -> some View {
         let tint: Color = {
@@ -298,7 +309,7 @@ struct WeatherCard: View {
             .foregroundStyle(tint)
     }
 
-    // Chip compacto con icono SF Symbol
+    // Chip compacto minimalista
     private func compactChip(icon: String, text: String) -> some View {
         VStack(spacing: 4) {
             Image(systemName: icon)
@@ -316,6 +327,7 @@ struct WeatherCard: View {
 }
 
 // MARK: - Location Provider
+
 final class WeatherLocationProvider: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var onLocation: ((CLLocation) -> Void)?
@@ -363,36 +375,20 @@ final class WeatherLocationProvider: NSObject, CLLocationManagerDelegate {
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("CLLocation error: \(error.localizedDescription)")
+        print("CLLocation error:", error.localizedDescription)
         onDenied?()
         onLocation = nil
         onDenied = nil
     }
 }
 
-
 // MARK: - Preview
+
 #Preview {
-    ScrollView {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible(), spacing: 16),
-                GridItem(.flexible(), spacing: 16)
-            ],
-            spacing: 16
-        ) {
-            WeatherCard()
-            
-            // Simula la tarjeta de Parcela para comparar tamaños
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(.systemGray6))
-                .frame(height: 200)
-                .overlay(
-                    Text("Parcela\n(Para comparar)")
-                        .multilineTextAlignment(.center)
-                )
-        }
-        .padding()
+    VStack(spacing: 16) {
+        WeatherCard() // ubicación del usuario
+        WeatherCard(latitude: 25.6866, longitude: -100.3161) // Monterrey fijo
     }
+    .padding()
     .background(Color(.systemBackground))
 }
