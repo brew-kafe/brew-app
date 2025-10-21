@@ -384,6 +384,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = brew/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Brew requires access to the camera to take photo of the diagnosis.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Esta app necesita tu ubicación para mostrar el clima de donde estás.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Brew requires access to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -416,6 +417,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = brew/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Brew requires access to the camera to take photo of the diagnosis.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Esta app necesita tu ubicación para mostrar el clima de donde estás.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Brew requires access to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

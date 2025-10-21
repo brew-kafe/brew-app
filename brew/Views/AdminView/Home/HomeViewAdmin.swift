@@ -1,15 +1,15 @@
 //
-//  HomeView.swift
+//  HomeViewAdmin.swift
 //  brew
 //
-//  Created by Monserrath Valenzuela on 10/09/25.
+//  Created by Monserrath Valenzuela on 21/10/25.
 //
 
 import SwiftUI
 import Charts
 
 
-struct HomeView: View  {
+struct HomeViewAdmin: View  {
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -45,7 +45,7 @@ struct HomeView: View  {
                     .padding(.horizontal, 20)
                     
                     // MARK: - Calendario
-                    CalendarWidgetView()
+                    CalendarWidgetViewAdmin()
                     
                     
                     // MARK: - Card de Alertas
@@ -64,5 +64,5 @@ struct HomeView: View  {
 }
 
 #Preview {
-    HomeView()
+    HomeViewAdmin()
 }
