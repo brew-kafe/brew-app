@@ -24,22 +24,48 @@ jobs:
           exit 1
         fi
 
-    # Step 2: Select correct Xcode version
+    # Step 2: Select correct Xcode version (latest available)
     - name: Select Xcode
-      run: sudo xcode-select -switch /Applications/Xcode.app
+    # You can adjust if a future Xcode_16.x appears
+      run: |
+        sudo xcode-select -switch /Applications/Xcode.app
+        echo "🧩 Selected Xcode version:"
+        xcodebuild -version
 
     # Step 3: Resolve dependencies (SPM)
     - name: Resolve Swift Packages
       run: xcodebuild -resolvePackageDependencies
 
-    # Step 4: Build for iPhone 16 Pro (fallback iPhone 17)
-    - name: Build for iPhone 16 Pro
+    # Step 4: Detect iOS SDK support
+    - name: Detect iOS SDK versions
+      id: detect-sdk
       run: |
+        echo "📱 Checking available iOS SDK versions..."
+        xcodebuild -showsdks | grep -i iphone
+        sdk_supported=$(xcodebuild -showsdks | grep -i "iphoneos26.0" || true)
+
+        if [ -n "$sdk_supported" ]; then
+          echo "✅ iOS 26.0 SDK is supported!"
+          echo "sdk=iphoneos26.0" >> $GITHUB_OUTPUT
+          echo "target=26.0" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ iOS 26.0 SDK not supported on this runner."
+          echo "Will fallback to iOS 17.0 to avoid build errors."
+          echo "sdk=iphonesimulator" >> $GITHUB_OUTPUT
+          echo "target=17.0" >> $GITHUB_OUTPUT
+        fi
+
+    # Step 5: Build app with fallback logic
+    - name: Build for iPhone 16 Pro or fallback
+      run: |
+        echo "🔧 Building for iOS target: ${{ steps.detect-sdk.outputs.target }}"
         xcodebuild -scheme brew \
-        -sdk iphonesimulator \
+        -sdk ${{ steps.detect-sdk.outputs.sdk }} \
         -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest' \
-        build || \
-        xcodebuild -scheme brew \
-        -sdk iphonesimulator \
-        -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
-        build
+        IPHONEOS_DEPLOYMENT_TARGET=${{ steps.detect-sdk.outputs.target }} \
+        build | xcpretty
+
+    # Optional: Add test step if you have unit/UI tests
+    # - name: Run tests
+    #   run: xcodebuild test -scheme brew -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=latest'
+
