@@ -22,12 +22,11 @@ struct HomeView: View  {
                         
                         Spacer()
                         
-                        Image("person.icon")
-                            .resizable()
-                            .scaledToFit()
-                            .background(Color.yellow)
-                            .frame(width: 45, height: 45)
-                            .clipShape(Circle())
+                        NavigationLink(destination: SettingsView()) {
+                            Image(systemName: "ellipsis.circle.fill")
+                                .font(.system(size: 35))
+                                .foregroundColor(.gray)
+                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
