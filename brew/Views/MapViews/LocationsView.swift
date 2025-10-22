@@ -83,7 +83,7 @@ struct LocationsView: View {
                             .onTapGesture {
                                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                                     selectedLocation = loc
-                                    vm.showNextLocation(location: loc)
+                                    vm.mapLocation = loc
                                     activeSheet = .preview(loc)
                                     cameraPosition = .region(
                                         MKCoordinateRegion(
@@ -98,15 +98,11 @@ struct LocationsView: View {
                 }
             }
             .mapControls {
-                MapCompass()
-                    .mapControlVisibility(.visible)
                 MapPitchToggle()
-                    .mapControlVisibility(.visible)
-                MapUserLocationButton()
                     .mapControlVisibility(.visible)
             }
             .safeAreaInset(edge: .top) {
-                Color.clear.frame(height: 280) // ✅ Updated to 200
+                Color.clear.frame(height: 280)
             }
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: 100)
@@ -136,7 +132,6 @@ struct LocationsView: View {
                 
                 Spacer()
                 
-                // ✅ Map Style Toggle Button
                 mapStyleToggle
                     .padding(.trailing, 20)
                     .padding(.bottom, 550)
@@ -155,9 +150,24 @@ struct LocationsView: View {
             switch sheetType {
             case .preview(let location):
                 LocationPreviewView(
-                    location: location,
+                    location: selectedLocation ?? location, // ✅ Use selectedLocation so it updates
                     onDismiss: { activeSheet = nil },
-                    onOpenDetail: { activeSheet = .detail(location) }
+                    onOpenDetail: {
+                        if let selected = selectedLocation {
+                            activeSheet = .detail(selected)
+                        }
+                    },
+                    onNext: { nextLoc in
+                        // ✅ Just update the selection and camera, DON'T change activeSheet
+                        selectedLocation = nextLoc
+                        cameraPosition = .region(
+                            MKCoordinateRegion(
+                                center: nextLoc.coordinates,
+                                latitudinalMeters: 2000,
+                                longitudinalMeters: 2000
+                            )
+                        )
+                    }
                 )
                 .presentationDetents([.height(200)])
                 .presentationDragIndicator(.hidden)
@@ -197,7 +207,6 @@ extension LocationsView {
 // MARK: - UI Components
 extension LocationsView {
     
-    // 🔍 Search bar
     private var searchBar: some View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
@@ -223,13 +232,12 @@ extension LocationsView {
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
     
-    // 🌿 Filter bar
     private var filterBar: some View {
         HStack(spacing: 16) {
             filterButton(kind: nil, icon: "leaf.fill", color: .gray, label: "Todos")
-            filterButton(kind: .safe, icon: "checkmark.circle.fill", color: .green, label: "Sanos")
+            filterButton(kind: .safe, icon: "checkmark.circle.fill", color: .green, label: "Sanas")
             filterButton(kind: .risk, icon: "exclamationmark.circle.fill", color: .yellow, label: "En riesgo")
-            filterButton(kind: .danger, icon: "xmark.octagon.fill", color: .red, label: "Con roya")
+            filterButton(kind: .danger, icon: "xmark.octagon.fill", color: .red, label: "Afectadas")
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
@@ -261,7 +269,6 @@ extension LocationsView {
         .buttonStyle(.plain)
     }
     
-    // 📍 Marker
     private func marker(for loc: Location) -> some View {
         let gradient: LinearGradient
         switch loc.kind {
@@ -307,7 +314,6 @@ extension LocationsView {
         }
     }
     
-    // 📜 Suggestion list
     private var suggestionList: some View {
         VStack(alignment: .leading, spacing: 0) {
             ScrollView {
@@ -356,7 +362,6 @@ extension LocationsView {
         .shadow(radius: 5)
     }
     
-    // 🗺️ Map Style Toggle
     private var mapStyleToggle: some View {
         Menu {
             Button {
@@ -383,20 +388,15 @@ extension LocationsView {
                 Label("Satélite", systemImage: "globe.americas.fill")
             }
         } label: {
-            VStack(spacing: 4) {
-                Image(systemName: mapStyle.icon)
-                    .font(.system(size: 20))
-                    .foregroundStyle(.primary)
-                Text(mapStyle.label)
-                    .font(.caption2)
-                    .foregroundColor(.primary)
-            }
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(.regularMaterial)
-            )
-            .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
+            Image(systemName: mapStyle.icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: 44, height: 47)
+                .background(
+                    Circle()
+                        .fill(.regularMaterial)
+                )
+                .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
         }
     }
 }
@@ -405,4 +405,3 @@ extension LocationsView {
     LocationsView()
         .environmentObject(LocationsViewModel())
 }
-

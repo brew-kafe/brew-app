@@ -13,6 +13,7 @@ struct LocationPreviewView: View {
     let location: Location
     let onDismiss: () -> Void
     let onOpenDetail: () -> Void
+    let onNext: (Location) -> Void
     
     var body: some View {
         VStack(spacing: 16) {
@@ -79,9 +80,15 @@ struct LocationPreviewView: View {
     
     private var nextButton: some View {
         Button {
+            // ✅ Find next location
+            guard let currentIndex = vm.locations.firstIndex(where: { $0.id == location.id }) else { return }
+            let nextIndex = (currentIndex + 1) % vm.locations.count
+            let nextLocation = vm.locations[nextIndex]
+            
+            // ✅ Just update the ViewModel and notify parent - DON'T change sheet
             withAnimation(.spring) {
-                vm.nextButtonPressed()
-                onDismiss()
+                vm.mapLocation = nextLocation
+                onNext(nextLocation)
             }
         } label: {
             Label("Siguiente", systemImage: "arrow.right.circle.fill")
@@ -98,7 +105,8 @@ struct LocationPreviewView: View {
         LocationPreviewView(
             location: LocationsDataService.locations.first!,
             onDismiss: {},
-            onOpenDetail: {}
+            onOpenDetail: {},
+            onNext: { _ in }
         )
         .environmentObject(LocationsViewModel())
     }
