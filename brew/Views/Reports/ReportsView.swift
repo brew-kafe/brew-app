@@ -6,231 +6,428 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ReportsView: View {
-    @Environment(\.colorScheme) var colorScheme
-    @EnvironmentObject private var vm: ReportViewModel
+    @StateObject private var viewModel = ReportViewModel()
+    @StateObject private var diagnosisViewModel = DiagnosisViewModel()
+    @Environment(\.modelContext) private var modelContext
+    
+    @State private var showCreateSheet = false
     @State private var searchText = ""
-
+    @State private var selectedReportType: ReportType?
+    
+    var filteredReports: [ReportEntity] {
+        var filtered = viewModel.reports
+        
+        // Filter by search text
+        if !searchText.isEmpty {
+            filtered = filtered.filter { report in
+                report.title.localizedCaseInsensitiveContains(searchText)
+            }
+        }
+        
+        // Filter by type
+        if let type = selectedReportType {
+            filtered = filtered.filter { $0.reportType == type.rawValue }
+        }
+        
+        return filtered
+    }
+    
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 15) {
-                // Encabezado con título
-                HStack {
-                    Text("Reportes")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(colorScheme == .dark ? .white : .primary)
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.vertical)
-
-                Text("Consulta el estado de las parcelas y los reportes más recientes.")
-                    .font(.subheadline)
-                    .foregroundColor(colorScheme == .dark ? .gray : .secondary)
-                    .padding(.horizontal)
-
-                // Estadísticas rápidas
-                ReportStatsRow(reports: filteredReports)
-                    .padding(.horizontal)
-
-                // Barra de búsqueda
-                SearchBar(text: $searchText)
-                    .padding(.horizontal)
-
-                // Lista principal
-                List {
-                    ForEach(Array(filteredReports.enumerated()), id: \.element.id) { index, report in
-                        NavigationLink(destination: ReportDetailView(report: .constant(vm.reports[index]))) {
-                            ReportRowView(report: report)
+        ZStack {
+            if viewModel.reports.isEmpty && !viewModel.isProcessing {
+                emptyStateView
+            } else {
+                mainContentView
+            }
+        }
+        .navigationTitle("Reportes")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button(action: {
+                        Task {
+                            await viewModel.fetchReports(modelContext: modelContext)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        .listRowBackground(colorScheme == .dark ? Color(.systemGray6) : Color.white)
+                    }) {
+                        Label("Sincronizar", systemImage: "arrow.clockwise")
                     }
-                    .onDelete(perform: deleteReports)
+                    
+                    Button(action: { showCreateSheet = true }) {
+                        Label("Nuevo Reporte", systemImage: "plus")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
-                .scrollContentBackground(.hidden)
-                .background(colorScheme == .dark ? Color(.systemBackground) : Color.white)
-                .refreshable {
-                    vm.refreshReports()
+            }
+        }
+        .searchable(text: $searchText, prompt: "Buscar reportes...")
+        .sheet(isPresented: $showCreateSheet) {
+            CreateReportView(
+                viewModel: viewModel,
+                diagnosisViewModel: diagnosisViewModel,
+                modelContext: modelContext
+            )
+        }
+        .task {
+            await viewModel.loadLocalReports(modelContext: modelContext)
+            await diagnosisViewModel.fetchDiagnoses(modelContext: modelContext)
+        }
+        .refreshable {
+            await viewModel.fetchReports(modelContext: modelContext)
+        }
+    }
+    
+    // MARK: - Empty State
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "doc.text.magnifyingglass")
+                .font(.system(size: 60))
+                .foregroundColor(.gray)
+            
+            Text("No hay reportes")
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            Text("Crea tu primer reporte vinculando diagnósticos")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+            
+            Button(action: { showCreateSheet = true }) {
+                Label("Crear Reporte", systemImage: "plus.circle.fill")
+                    .font(.headline)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(12)
+            }
+        }
+        .padding()
+    }
+    
+    // MARK: - Main Content
+    private var mainContentView: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Statistics Card
+                statisticsCard
+                
+                // Filter by Type
+                filterSection
+                
+                // Reports List
+                reportsListSection
+                
+                // Error/Success Messages
+                if let error = viewModel.errorMessage {
+                    ErrorBanner(message: error)
+                }
+                
+                if let success = viewModel.successMessage {
+                    SuccessBanner(message: success)
+                }
+            }
+            .padding()
+        }
+    }
+    
+    // MARK: - Statistics Card
+    private var statisticsCard: some View {
+        let stats = viewModel.calculateStatistics()
+        
+        return VStack(alignment: .leading, spacing: 12) {
+            Text("Resumen")
+                .font(.headline)
+            
+            HStack(spacing: 20) {
+                StatItemView(
+                    title: "Total",
+                    value: "\(stats.totalReports)",
+                    icon: "doc.text.fill",
+                    color: .blue
+                )
+                
+                if let avgScore = stats.averagePerformanceScore {
+                    StatItemView(
+                        title: "Prom. Score",
+                        value: String(format: "%.1f", avgScore),
+                        icon: "chart.bar.fill",
+                        color: .green
+                    )
+                }
+                
+                StatItemView(
+                    title: "Este Mes",
+                    value: "\(reportsThisMonth())",
+                    icon: "calendar",
+                    color: .orange
+                )
+            }
+            
+            // By Type Breakdown
+            if !stats.byType.isEmpty {
+                Divider()
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Por Tipo")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    ForEach(Array(stats.byType.keys.sorted(by: { $0.rawValue < $1.rawValue })), id: \.self) { type in
+                        HStack {
+                            Label(type.displayName, systemImage: type.icon)
+                                .font(.caption)
+                            Spacer()
+                            Text("\(stats.byType[type] ?? 0)")
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(radius: 2)
+    }
+    
+    // MARK: - Filter Section
+    private var filterSection: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                FilterChip(
+                    title: "Todos",
+                    isSelected: selectedReportType == nil,
+                    action: { selectedReportType = nil }
+                )
+                
+                ForEach(ReportType.allCases, id: \.self) { type in
+                    FilterChip(
+                        title: type.displayName,
+                        icon: type.icon,
+                        isSelected: selectedReportType == type,
+                        action: { selectedReportType = type }
+                    )
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+    
+    // MARK: - Reports List
+    private var reportsListSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Reportes")
+                    .font(.headline)
+                
+                Spacer()
+                
+                if viewModel.isProcessing {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
+            }
+            
+            if filteredReports.isEmpty {
+                Text("No se encontraron reportes")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+            } else {
+                ForEach(filteredReports) { report in
+                    NavigationLink(destination: EnhancedReportDetailView(
+                        report: report,
+                        viewModel: viewModel,
+                        diagnosisViewModel: diagnosisViewModel
+                    )) {
+                        ReportCardView(report: report)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
     }
     
-    private var gradientColors: [Color] {
-        if colorScheme == .dark {
-            return [
-                Color(red: 0.4, green: 0.35, blue: 0.1).opacity(0.6),
-                Color(red: 0.3, green: 0.25, blue: 0.1).opacity(0.8)
-            ]
-        } else {
-            return [
-                Color.yellow.opacity(0.3),
-                Color.brown.opacity(0.50)
-            ]
-        }
-    }
-
-    private var filteredReports: [DetailedReportData] {
-        if searchText.isEmpty {
-            return vm.reports
-        }
-        return vm.reports.filter { report in
-            report.parcelName.localizedCaseInsensitiveContains(searchText) ||
-            report.diagnosis.localizedCaseInsensitiveContains(searchText) ||
-            report.technicianName.localizedCaseInsensitiveContains(searchText)
-        }
-    }
-
-    private func deleteReports(offsets: IndexSet) {
-        for index in offsets {
-            vm.deleteReport(vm.reports[index])
-        }
+    // MARK: - Helper Functions
+    private func reportsThisMonth() -> Int {
+        let calendar = Calendar.current
+        let now = Date()
+        return viewModel.reports.filter { report in
+            calendar.isDate(report.reportDate, equalTo: now, toGranularity: .month)
+        }.count
     }
 }
 
-// MARK: - Report Stats Row
-struct ReportStatsRow: View {
-    @Environment(\.colorScheme) var colorScheme
-    let reports: [DetailedReportData]
-    
-    private var healthyCount: Int {
-        reports.filter { $0.statusIcon == "checkmark.circle.fill" }.count
-    }
-    
-    private var warningCount: Int {
-        reports.filter { $0.statusIcon == "exclamationmark.triangle.fill" }.count
-    }
-    
-    private var criticalCount: Int {
-        reports.filter { $0.statusIcon == "xmark.octagon.fill" }.count
-    }
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            StatBadge(count: healthyCount, label: "Sanos", color: .green)
-            StatBadge(count: warningCount, label: "Riesgo", color: .orange)
-            StatBadge(count: criticalCount, label: "Críticos", color: .red)
-        }
-    }
-}
+// MARK: - Supporting Views
 
-// MARK: - Stat Badge
-struct StatBadge: View {
-    @Environment(\.colorScheme) var colorScheme
-    let count: Int
-    let label: String
+struct StatItemView: View {
+    let title: String
+    let value: String
+    let icon: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 4) {
-            Text("\(count)")
+        VStack(alignment: .leading, spacing: 4) {
+            Image(systemName: icon)
+                .foregroundColor(color)
+            Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(color)
-            Text(label)
+            Text(title)
                 .font(.caption)
-                .foregroundColor(colorScheme == .dark ? .gray : .secondary)
+                .foregroundColor(.secondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(colorScheme == .dark ? Color(.systemGray6) : Color.white.opacity(0.5))
-        .cornerRadius(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 
-// MARK: - Search Bar
-struct SearchBar: View {
-    @Environment(\.colorScheme) var colorScheme
-    @Binding var text: String
+struct FilterChip: View {
+    let title: String
+    var icon: String? = nil
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.caption)
+                }
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(isSelected ? .semibold : .regular)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(isSelected ? Color.blue : Color(.systemGray6))
+            .foregroundColor(isSelected ? .white : .primary)
+            .cornerRadius(20)
+        }
+    }
+}
+
+struct ReportCardView: View {
+    let report: ReportEntity
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Header
+            HStack {
+                if let type = report.reportTypeEnum {
+                    Image(systemName: type.icon)
+                        .foregroundColor(.blue)
+                        .font(.title3)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(report.title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    if let type = report.reportTypeEnum {
+                        Text(type.displayName)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
+            
+            Divider()
+            
+            // Info
+            HStack {
+                Label("\(report.diagnosisCount) diagnósticos", systemImage: "doc.text")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Text(report.reportDate, style: .date)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            if let score = report.performanceScore {
+                HStack {
+                    Text("Puntuación:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    
+                    Text(String(format: "%.1f", score))
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(scoreColor(score))
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(radius: 2)
+    }
+    
+    private func scoreColor(_ score: Double) -> Color {
+        switch score {
+        case 80...100: return .green
+        case 60..<80: return .orange
+        default: return .red
+        }
+    }
+}
+
+struct ErrorBanner: View {
+    let message: String
     
     var body: some View {
         HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            
-            TextField("Buscar reportes...", text: $text)
-                .textFieldStyle(PlainTextFieldStyle())
-                .foregroundColor(colorScheme == .dark ? .white : .primary)
-            
-            if !text.isEmpty {
-                Button(action: { text = "" }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                }
-            }
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(.red)
+            Text(message)
+                .font(.caption)
+            Spacer()
         }
-        .padding(10)
-        .background(colorScheme == .dark ? Color(.systemGray6) : Color.white)
-        .cornerRadius(10)
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.1), radius: 2, x: 0, y: 1)
+        .padding()
+        .background(Color.red.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 
-// MARK: - Enhanced Report Row View
-struct ReportRowView: View {
-    @Environment(\.colorScheme) var colorScheme
-    let report: DetailedReportData
+struct SuccessBanner: View {
+    let message: String
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Ícono de estado con círculo de fondo
-            ZStack {
-                Circle()
-                    .fill(report.statusSwiftUIColor.opacity(colorScheme == .dark ? 0.25 : 0.15))
-                    .frame(width: 44, height: 44)
-                
-                Image(systemName: report.statusIcon)
-                    .font(.system(size: 20))
-                    .foregroundColor(report.statusSwiftUIColor)
-            }
-            
-            // Información del reporte
-            VStack(alignment: .leading, spacing: 5) {
-                Text(report.parcelName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(colorScheme == .dark ? .white : .primary)
-                    .lineLimit(1)
-                
-                Text(report.diagnosis)
-                    .font(.system(size: 14))
-                    .foregroundColor(colorScheme == .dark ? .gray : .secondary)
-                    .lineLimit(2)
-                
-                HStack(spacing: 12) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 11))
-                        Text(report.technicianName)
-                            .font(.system(size: 12))
-                    }
-                    .foregroundColor(colorScheme == .dark ? .gray : .secondary)
-                    
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock.fill")
-                            .font(.system(size: 11))
-                        Text(report.timestamp)
-                            .font(.system(size: 12))
-                    }
-                    .foregroundColor(colorScheme == .dark ? .gray : .secondary)
-                }
-            }
-            
+        HStack {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(.green)
+            Text(message)
+                .font(.caption)
             Spacer()
-            
-            // Chevron con fondo sutil
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.gray.opacity(0.5))
         }
-        .padding(.vertical, 8)
-        .contentShape(Rectangle())
+        .padding()
+        .background(Color.green.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 
+// MARK: - Preview
 #Preview {
     ReportsView()
-        .environmentObject(ReportViewModel())
-        .preferredColorScheme(.dark)
+        .modelContainer(for: [ReportEntity.self, DiagnosisEntity.self])
 }

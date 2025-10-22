@@ -6,8 +6,10 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct DiagnosticView: View {
+    @Environment(\.modelContext) private var modelContext
     @StateObject var viewModel = DiagnosisViewModel()
     @State private var showCamera = false
     @State private var selectedDiagnosis: DiagnosisEntity?
@@ -15,53 +17,60 @@ struct DiagnosticView: View {
     @State private var diagnosisToDelete: DiagnosisEntity?
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Main content
-                if viewModel.diagnoses.isEmpty {
-                    emptyStateView
-                } else {
-                    diagnosisList
-                }
+        ZStack {
+            // Main content
+            if viewModel.diagnosesList.isEmpty {
+                emptyStateView
+            } else {
+                diagnosisList
+            }
 
-                // Analyzing overlay
-                if viewModel.isAnalyzing {
-                    analyzingOverlay
-                }
+            // Analyzing overlay
+            if viewModel.isProcessing {
+                analyzingOverlay
             }
-            .navigationTitle("Diagnósticos")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    // Camera Button
-                    Button(action: {
-                        showCamera = true
-                    }) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 25))
-                            .foregroundColor(.white)
-                            .padding(8)
-                            .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
-                            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+        }
+        .navigationTitle("Diagnósticos")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                // Camera Button
+                Button(action: {
+                    showCamera = true
+                }) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 25))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
+                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                }
+                .accessibilityLabel("Abrir cámara para diagnóstico")
+            }
+        }
+        .sheet(isPresented: $showCamera) {
+            CameraView(diagnosisViewModel: viewModel)
+        }
+        .sheet(item: $selectedDiagnosis) { diagnosis in
+            DiagnosticDetailView(diagnosis: diagnosis, viewModel: viewModel)
+        }
+        .alert("Eliminar Diagnóstico", isPresented: $showingDeleteAlert) {
+            Button("Cancelar", role: .cancel) { }
+            Button("Eliminar", role: .destructive) {
+                if let diagnosis = diagnosisToDelete {
+                    Task {
+                        await viewModel.deleteDiagnosis(
+                            diagnosisId: diagnosis.id.uuidString,
+                            entity: diagnosis,
+                            modelContext: modelContext
+                        )
                     }
-                    .accessibilityLabel("Abrir cámara para diagnóstico")
                 }
             }
-            .sheet(isPresented: $showCamera) {
-                CameraView(diagnosisViewModel: viewModel)
-            }
-            .sheet(item: $selectedDiagnosis) { diagnosis in
-                DiagnosticDetailView(diagnosis: diagnosis, viewModel: viewModel)
-            }
-            .alert("Eliminar Diagnóstico", isPresented: $showingDeleteAlert) {
-                Button("Cancelar", role: .cancel) { }
-                Button("Eliminar", role: .destructive) {
-                    if let diagnosis = diagnosisToDelete {
-                        viewModel.deleteDiagnosis(diagnosis)
-                    }
-                }
-            } message: {
-                Text("¿Estás seguro de que deseas eliminar este diagnóstico? Esta acción no se puede deshacer.")
-            }
+        } message: {
+            Text("¿Estás seguro de que deseas eliminar este diagnóstico? Esta acción no se puede deshacer.")
+        }
+        .task {
+            await viewModel.fetchDiagnoses(modelContext: modelContext)
         }
     }
 
@@ -69,7 +78,7 @@ struct DiagnosticView: View {
 
     private var diagnosisList: some View {
         List {
-            ForEach(viewModel.diagnoses) { diagnosis in
+            ForEach(viewModel.diagnosesList) { diagnosis in
                 DiagnosisRow(diagnosis: diagnosis)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -195,8 +204,8 @@ private struct DiagnosisRow: View {
             }
 
             // Description
-            if let description = diagnosis.aiDescription {
-                Text(description)
+            if !diagnosis.aiDescription.isEmpty {
+                Text(diagnosis.aiDescription)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(2)

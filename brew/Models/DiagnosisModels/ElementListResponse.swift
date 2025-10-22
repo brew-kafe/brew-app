@@ -2,17 +2,13 @@
 //  ElementListResponse.swift
 //  brew
 //
-//  Created by toño on 09/10/25.
+//  Created by toño on 21/10/25.
 //
 
 import Foundation
 
-struct ElementInfo: Codable, Hashable {
-    let key: String
-    let name: String
-    let symbol: String
+/// Response containing list of supported nutrient elements
+struct ElementListResponse: Codable {
+    let elements: [String]
 }
 
-struct ElementListResponse: Codable {
-    let elements: [ElementInfo]
-}

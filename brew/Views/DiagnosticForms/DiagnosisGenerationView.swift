@@ -476,7 +476,7 @@ struct DiagnosisGenerationView: View {
                 ElementAnalysis(
                     element: aiElement.element,
                     percentage: aiElement.percentage,
-                    detectionState: DetectionState(rawValue: aiElement.detectionState) ?? .moderate,
+                    detectionState: aiElement.detectionState,
                     deficiencyLevel: aiElement.deficiencyLevel,
                     recommendations: aiElement.recommendations
                 )
@@ -487,7 +487,7 @@ struct DiagnosisGenerationView: View {
         )
 
         // Add to diagnosis list
-        diagnosisViewModel.diagnoses.insert(entity, at: 0)
+        diagnosisViewModel.diagnosesList.insert(entity, at: 0)
 
         // Optionally, persist using AIDiagnosisDataService as well
         if #available(iOS 18.1, *) {

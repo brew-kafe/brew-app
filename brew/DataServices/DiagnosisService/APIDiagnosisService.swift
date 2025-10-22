@@ -2,187 +2,95 @@
 //  APIDiagnosisService.swift
 //  brew
 //
-//  Created by toño on 20/10/25.
+//  Created by toño on 21/10/25.
 //
 
 import Foundation
+import UIKit
 
-enum DiagnosisAPIError: Error {
-    case invalidURL
-    case networkError(Error)
-    case decodingError(Error)
-    case httpError(Int)
-    case unknown
-    
-    var localizedDescription: String {
-        switch self {
-        case .invalidURL:
-            return "URL inválida"
-        case .networkError(let error):
-            return "Error de red: \(error.localizedDescription)"
-        case .decodingError(let error):
-            return "Error de decodificación: \(error.localizedDescription)"
-        case .httpError(let code):
-            return "Error HTTP: \(code)"
-        case .unknown:
-            return "Error desconocido"
-        }
-    }
+// MARK: - API Configuration
+struct APIConfiguration {
+    static let baseURL = "http://127.0.0.1:8000/api"
+    static let timeout: TimeInterval = 30
 }
 
-// MARK: - API Request Models
-struct DiagnosisCreateRequest: Codable {3
-    let userId: String
-    let parcelName: String
-    let plantNumber: String?
-    let technicianName: String
-    let primaryDeficiency: String
-    let deficiencyElement: String
-    let detectionState: String
-    let aiConfidence: Double?
-    let aiDescription: String?
-    let aiRecommendations: [String]
-    let allElements: [ElementAnalysisAPI]
-    let photoUrls: [String]
-    let notes: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case userId = "user_id"
-        case parcelName = "parcel_name"
-        case plantNumber = "plant_number"
-        case technicianName = "technician_name"
-        case primaryDeficiency = "primary_deficiency"
-        case deficiencyElement = "deficiency_element"
-        case detectionState = "detection_state"
-        case aiConfidence = "ai_confidence"
-        case aiDescription = "ai_description"
-        case aiRecommendations = "ai_recommendations"
-        case allElements = "all_elements"
-        case photoUrls = "photo_urls"
-        case notes
-    }
-}
-
-struct ElementAnalysisAPI: Codable {
-    let element: String
-    let percentage: Double
-    let detectionState: String
-    let deficiencyLevel: String?
-    let recommendations: [String]
-    
-    enum CodingKeys: String, CodingKey {
-        case element, percentage
-        case detectionState = "detection_state"
-        case deficiencyLevel = "deficiency_level"
-        case recommendations
-    }
-}
-
-// MARK: - API Response Models
-struct DiagnosisAPIResponse: Codable {
-    let diagnosisId: String
-    let userId: String
-    let parcelName: String
-    let plantNumber: String?
-    let technicianName: String
-    let primaryDeficiency: String
-    let deficiencyElement: String
-    let detectionState: String
-    let aiConfidence: Double?
-    let aiDescription: String?
-    let aiRecommendations: [String]
-    let allElements: [ElementAnalysisAPI]
-    let photoUrls: [String]
-    let diagnosisDate: String
-    let createdAt: String
-    
-    enum CodingKeys: String, CodingKey {
-        case diagnosisId = "diagnosis_id"
-        case userId = "user_id"
-        case parcelName = "parcel_name"
-        case plantNumber = "plant_number"
-        case technicianName = "technician_name"
-        case primaryDeficiency = "primary_deficiency"
-        case deficiencyElement = "deficiency_element"
-        case detectionState = "detection_state"
-        case aiConfidence = "ai_confidence"
-        case aiDescription = "ai_description"
-        case aiRecommendations = "ai_recommendations"
-        case allElements = "all_elements"
-        case photoUrls = "photo_urls"
-        case diagnosisDate = "diagnosis_date"
-        case createdAt = "created_at"
-    }
-}
-
-struct DiagnosisListResponse: Codable {
-    let diagnoses: [DiagnosisAPIResponse]
-    let total: Int
-    let page: Int
-    let pageSize: Int
-    
-    enum CodingKeys: String, CodingKey {
-        case diagnoses, total, page
-        case pageSize = "page_size"
-    }
-}
-
-// MARK: - API Service
-class APIDiagnosisService {
+// MARK: - API Diagnosis Service
+class APIDiagnosisService: ObservableObject {
     static let shared = APIDiagnosisService()
     
-    private let baseURL = "https://brew-api-production.up.railway.app/api/diagnoses"
-    private var decoder: JSONDecoder {
-        let d = JSONDecoder()
-        d.dateDecodingStrategy = .iso8601
-        return d
+    private let session: URLSession
+    private let encoder: JSONEncoder
+    private let decoder: JSONDecoder
+    
+    private init() {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = APIConfiguration.timeout
+        config.timeoutIntervalForResource = APIConfiguration.timeout
+        self.session = URLSession(configuration: config)
+        
+        self.encoder = JSONEncoder()
+        self.encoder.dateEncodingStrategy = .iso8601
+        
+        self.decoder = JSONDecoder()
+        self.decoder.dateDecodingStrategy = .iso8601
     }
     
-    private var encoder: JSONEncoder {
-        let e = JSONEncoder()
-        e.dateEncodingStrategy = .iso8601
-        return e
+    // MARK: - Photo Analysis
+    /// Analyzes a plant photo using the backend AI model
+    func analyzePhoto(
+        image: UIImage,
+        parcelName: String,
+        plantNumber: String? = nil,
+        technicianName: String
+    ) async throws -> PhotoAnalysisResponse {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/analyze-photo") else {
+            throw APIDiagnosisError.invalidURL
+        }
+        
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        
+        let boundary = "Boundary-\(UUID().uuidString)"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        
+        let body = createMultipartBody(
+            image: image,
+            parcelName: parcelName,
+            plantNumber: plantNumber,
+            technicianName: technicianName,
+            boundary: boundary
+        )
+        
+        request.httpBody = body
+        
+        do {
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIDiagnosisError.invalidResponse
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                throw APIDiagnosisError.serverError(statusCode: httpResponse.statusCode)
+            }
+            
+            return try decoder.decode(PhotoAnalysisResponse.self, from: data)
+        } catch let error as APIDiagnosisError {
+            throw error
+        } catch {
+            throw APIDiagnosisError.networkError(error)
+        }
     }
-    
-    private init() {}
     
     // MARK: - Create Diagnosis
+    /// Creates a diagnosis record in the backend database
     func createDiagnosis(
-        _ diagnosis: DiagnosisEntity,
         userId: String,
-        completion: @escaping (Result<DiagnosisAPIResponse, DiagnosisAPIError>) -> Void
-    ) {
-        guard let url = URL(string: baseURL) else {
-            completion(.failure(.invalidURL))
-            return
+        request: DiagnosisCreateAPIRequest
+    ) async throws -> DiagnosisAPIResponse {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses") else {
+            throw APIDiagnosisError.invalidURL
         }
-        
-        // Convert DiagnosisEntity to API request
-        let elements = diagnosis.allElements.map { elem in
-            ElementAnalysisAPI(
-                element: elem.element,
-                percentage: elem.percentage,
-                detectionState: elem.detectionState.rawValue,
-                deficiencyLevel: elem.deficiencyLevel,
-                recommendations: elem.recommendations
-            )
-        }
-        
-        let request = DiagnosisCreateRequest(
-            userId: userId,
-            parcelName: diagnosis.parcelName,
-            plantNumber: diagnosis.plantNumber,
-            technicianName: diagnosis.technicianName,
-            primaryDeficiency: diagnosis.primaryDeficiency,
-            deficiencyElement: diagnosis.deficiencyElement,
-            detectionState: diagnosis.detectionState,
-            aiConfidence: diagnosis.aiConfidence,
-            aiDescription: diagnosis.aiDescription,
-            aiRecommendations: diagnosis.aiRecommendations,
-            allElements: elements,
-            photoUrls: diagnosis.photoURLs,
-            notes: nil
-        )
         
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
@@ -190,165 +98,232 @@ class APIDiagnosisService {
         
         do {
             urlRequest.httpBody = try encoder.encode(request)
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIDiagnosisError.invalidResponse
+            }
+            
+            guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                throw APIDiagnosisError.serverError(statusCode: httpResponse.statusCode)
+            }
+            
+            return try decoder.decode(DiagnosisAPIResponse.self, from: data)
+        } catch let error as APIDiagnosisError {
+            throw error
         } catch {
-            completion(.failure(.decodingError(error)))
-            return
+            throw APIDiagnosisError.networkError(error)
         }
-        
-        URLSession.shared.dataTask(with: urlRequest) { [weak self] data, response, error in
-            if let error = error {
-                completion(.failure(.networkError(error)))
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(.unknown))
-                return
-            }
-            
-            guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(.httpError(httpResponse.statusCode)))
-                return
-            }
-            
-            guard let data = data else {
-                completion(.failure(.unknown))
-                return
-            }
-            
-            do {
-                let response = try self?.decoder.decode(DiagnosisAPIResponse.self, from: data)
-                if let response = response {
-                    completion(.success(response))
-                }
-            } catch {
-                completion(.failure(.decodingError(error)))
-            }
-        }.resume()
     }
     
-    // MARK: - Get User Diagnoses
-    func getUserDiagnoses(
-        userId: String,
-        completion: @escaping (Result<[DiagnosisAPIResponse], DiagnosisAPIError>) -> Void
-    ) {
-        guard let url = URL(string: "\(baseURL)/user/\(userId)") else {
-            completion(.failure(.invalidURL))
-            return
+    // MARK: - Fetch Diagnoses
+    /// Fetches all diagnoses for a specific user
+    func fetchDiagnoses(userId: String) async throws -> [DiagnosisAPIResponse] {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses") else {
+            throw APIDiagnosisError.invalidURL
         }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            if let error = error {
-                completion(.failure(.networkError(error)))
-                return
-            }
+        do {
+            let (data, response) = try await session.data(from: url)
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(.unknown))
-                return
+                throw APIDiagnosisError.invalidResponse
             }
             
-            guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(.httpError(httpResponse.statusCode)))
-                return
+            guard httpResponse.statusCode == 200 else {
+                throw APIDiagnosisError.serverError(statusCode: httpResponse.statusCode)
             }
             
-            guard let data = data else {
-                completion(.failure(.unknown))
-                return
-            }
-            
-            do {
-                let diagnoses = try self?.decoder.decode([DiagnosisAPIResponse].self, from: data)
-                if let diagnoses = diagnoses {
-                    completion(.success(diagnoses))
-                }
-            } catch {
-                completion(.failure(.decodingError(error)))
-            }
-        }.resume()
+            return try decoder.decode([DiagnosisAPIResponse].self, from: data)
+        } catch let error as APIDiagnosisError {
+            throw error
+        } catch {
+            throw APIDiagnosisError.networkError(error)
+        }
     }
     
-    // MARK: - Get Single Diagnosis
-    func getDiagnosis(
-        diagnosisId: String,
-        completion: @escaping (Result<DiagnosisAPIResponse, DiagnosisAPIError>) -> Void
-    ) {
-        guard let url = URL(string: "\(baseURL)/\(diagnosisId)") else {
-            completion(.failure(.invalidURL))
-            return
+    // MARK: - Fetch Single Diagnosis
+    /// Fetches a specific diagnosis by ID
+    func fetchDiagnosis(userId: String, diagnosisId: String) async throws -> DiagnosisAPIResponse {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses/\(diagnosisId)") else {
+            throw APIDiagnosisError.invalidURL
         }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            if let error = error {
-                completion(.failure(.networkError(error)))
-                return
-            }
+        do {
+            let (data, response) = try await session.data(from: url)
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(.unknown))
-                return
+                throw APIDiagnosisError.invalidResponse
             }
             
-            guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(.httpError(httpResponse.statusCode)))
-                return
+            guard httpResponse.statusCode == 200 else {
+                throw APIDiagnosisError.serverError(statusCode: httpResponse.statusCode)
             }
             
-            guard let data = data else {
-                completion(.failure(.unknown))
-                return
-            }
-            
-            do {
-                let diagnosis = try self?.decoder.decode(DiagnosisAPIResponse.self, from: data)
-                if let diagnosis = diagnosis {
-                    completion(.success(diagnosis))
-                }
-            } catch {
-                completion(.failure(.decodingError(error)))
-            }
-        }.resume()
+            return try decoder.decode(DiagnosisAPIResponse.self, from: data)
+        } catch let error as APIDiagnosisError {
+            throw error
+        } catch {
+            throw APIDiagnosisError.networkError(error)
+        }
     }
     
     // MARK: - Delete Diagnosis
-    func deleteDiagnosis(
-        diagnosisId: String,
-        completion: @escaping (Result<Void, DiagnosisAPIError>) -> Void
-    ) {
-        guard let url = URL(string: "\(baseURL)/\(diagnosisId)") else {
-            completion(.failure(.invalidURL))
-            return
+    /// Deletes a diagnosis from the backend
+    func deleteDiagnosis(userId: String, diagnosisId: String) async throws {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses/\(diagnosisId)") else {
+            throw APIDiagnosisError.invalidURL
         }
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
         
-        URLSession.shared.dataTask(with: request) { _, response, error in
-            if let error = error {
-                completion(.failure(.networkError(error)))
-                return
-            }
+        do {
+            let (_, response) = try await session.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                completion(.failure(.unknown))
-                return
+                throw APIDiagnosisError.invalidResponse
             }
             
-            guard (200...299).contains(httpResponse.statusCode) else {
-                completion(.failure(.httpError(httpResponse.statusCode)))
-                return
+            guard httpResponse.statusCode == 200 || httpResponse.statusCode == 204 else {
+                throw APIDiagnosisError.deleteFailed
+            }
+        } catch let error as APIDiagnosisError {
+            throw error
+        } catch {
+            throw APIDiagnosisError.networkError(error)
+        }
+    }
+    
+    // MARK: - Get Detection States
+    /// Fetches available detection states from the backend
+    func getDetectionStates() async throws -> DetectionStateResponse {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/detection-states") else {
+            throw APIDiagnosisError.invalidURL
+        }
+        
+        do {
+            let (data, response) = try await session.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIDiagnosisError.invalidResponse
             }
             
-            completion(.success(()))
-        }.resume()
+            guard httpResponse.statusCode == 200 else {
+                throw APIDiagnosisError.serverError(statusCode: httpResponse.statusCode)
+            }
+            
+            return try decoder.decode(DetectionStateResponse.self, from: data)
+        } catch let error as APIDiagnosisError {
+            throw error
+        } catch {
+            throw APIDiagnosisError.networkError(error)
+        }
+    }
+    
+    // MARK: - Get Supported Elements
+    /// Fetches list of supported nutrient elements
+    func getSupportedElements() async throws -> ElementListResponse {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/elements") else {
+            throw APIDiagnosisError.invalidURL
+        }
+        
+        do {
+            let (data, response) = try await session.data(from: url)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIDiagnosisError.invalidResponse
+            }
+            
+            guard httpResponse.statusCode == 200 else {
+                throw APIDiagnosisError.serverError(statusCode: httpResponse.statusCode)
+            }
+            
+            return try decoder.decode(ElementListResponse.self, from: data)
+        } catch let error as APIDiagnosisError {
+            throw error
+        } catch {
+            throw APIDiagnosisError.networkError(error)
+        }
+    }
+    
+    // MARK: - Helper Methods
+    private func createMultipartBody(
+        image: UIImage,
+        parcelName: String,
+        plantNumber: String?,
+        technicianName: String,
+        boundary: String
+    ) -> Data {
+        var body = Data()
+        
+        // Add image file
+        if let imageData = image.jpegData(compressionQuality: 0.8) {
+            body.append("--\(boundary)\r\n")
+            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"plant.jpg\"\r\n")
+            body.append("Content-Type: image/jpeg\r\n\r\n")
+            body.append(imageData)
+            body.append("\r\n")
+        }
+        
+        // Add parcel_name
+        body.append("--\(boundary)\r\n")
+        body.append("Content-Disposition: form-data; name=\"parcel_name\"\r\n\r\n")
+        body.append(parcelName)
+        body.append("\r\n")
+        
+        // Add plant_number if provided
+        if let plantNumber = plantNumber {
+            body.append("--\(boundary)\r\n")
+            body.append("Content-Disposition: form-data; name=\"plant_number\"\r\n\r\n")
+            body.append(plantNumber)
+            body.append("\r\n")
+        }
+        
+        // Add technician_name
+        body.append("--\(boundary)\r\n")
+        body.append("Content-Disposition: form-data; name=\"technician_name\"\r\n\r\n")
+        body.append(technicianName)
+        body.append("\r\n")
+        
+        body.append("--\(boundary)--\r\n")
+        return body
+    }
+}
+
+// MARK: - Data Extension
+private extension Data {
+    mutating func append(_ string: String) {
+        if let data = string.data(using: .utf8) {
+            append(data)
+        }
+    }
+}
+
+// MARK: - API Diagnosis Error
+enum APIDiagnosisError: LocalizedError {
+    case invalidURL
+    case invalidResponse
+    case serverError(statusCode: Int)
+    case networkError(Error)
+    case deleteFailed
+    case decodingError(Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "URL inválida"
+        case .invalidResponse:
+            return "Respuesta inválida del servidor"
+        case .serverError(let code):
+            return "Error del servidor (código: \(code))"
+        case .networkError(let error):
+            return "Error de red: \(error.localizedDescription)"
+        case .deleteFailed:
+            return "No se pudo eliminar el diagnóstico"
+        case .decodingError(let error):
+            return "Error al procesar datos: \(error.localizedDescription)"
+        }
     }
 }
