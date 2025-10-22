@@ -1,52 +1,52 @@
 [
   {
     "id": 1,
-    "question": "¿Cuál es el propósito de esta app?",
-    "answer": "Esta aplicación ayuda a los usuarios a gestionar sus operaciones combinando herramientas como un calendario, diagnósticos con IA, reportes, tableros de control y mapas de parcelas en una sola plataforma."
+    "question": "¿Qué es Brew?",
+    "answer": "Brew es una app que ayuda a monitorear cultivos de café de forma digital. Reemplaza los registros en papel y permite que los técnicos capturen datos desde el campo, mientras las cooperativas pueden ver toda la información en un solo lugar."
   },
   {
     "id": 2,
-    "question": "¿Cómo agrego eventos al calendario?",
-    "answer": "Puedes agregar eventos navegando a la sección de Calendario, seleccionando una fecha y llenando los detalles del evento como título, descripción y hora."
+    "question": "¿Cómo funciona el diagnóstico con IA?",
+    "answer": "El técnico toma cinco fotos del cultivo y Brew usa inteligencia artificial para analizar el estado de las plantas. Después genera un reporte con recomendaciones fáciles de seguir para mejorar su salud."
   },
   {
     "id": 3,
-    "question": "¿Qué hace la función de diagnóstico?",
-    "answer": "La herramienta de diagnóstico utiliza aprendizaje automático y clasificación de imágenes para analizar imágenes cargadas y proporcionar información o predicciones basadas en los modelos entrenados."
+    "question": "¿Puedo usar Brew sin conexión a internet?",
+    "answer": "Sí. Brew funciona sin conexión y guarda la información en tu dispositivo. Cuando vuelvas a tener internet, todo se sincroniza automáticamente."
   },
   {
     "id": 4,
-    "question": "¿Dónde puedo ver mis reportes?",
-    "answer": "Los reportes se pueden generar y acceder desde la sección de Reportes. Puedes verlos, descargarlos o compartirlos según sea necesario."
+    "question": "¿Cómo veo el estado de mis parcelas?",
+    "answer": "En el mapa puedes ver todas tus parcelas con colores que indican su estado: verde si están bien, amarillo si hay deficiencias y rojo si hay plagas. Así sabes dónde actuar primero."
   },
   {
     "id": 5,
-    "question": "¿Para qué se usan los tableros?",
-    "answer": "Los tableros muestran resúmenes visuales de métricas clave, KPIs y estimaciones de producción a través de gráficos y tablas, lo que facilita monitorear el rendimiento de un vistazo."
+    "question": "¿Cómo agendo mis tareas de monitoreo?",
+    "answer": "En el calendario puedes crear y organizar tus tareas de seguimiento. Muy pronto, los reportes con IA podrán generar tareas automáticas con recordatorios."
   },
   {
     "id": 6,
-    "question": "¿Cómo se almacenan los datos?",
-    "answer": "Todos los datos se almacenan de forma segura dentro de la base de datos de la aplicación y pueden ser accedidos en cualquier momento desde las secciones de Reportes o Tablero."
+    "question": "¿Qué puede ver la cooperativa?",
+    "answer": "La cooperativa tiene acceso a una vista general con el estado de las parcelas, reportes, tareas y estadísticas. También incluye un mapa, historial y calendario de actividades del equipo."
   },
   {
     "id": 7,
-    "question": "¿Qué puedo encontrar en la vista de Inicio?",
-    "answer": "La vista de Inicio proporciona una visión rápida de actualizaciones importantes, próximos eventos, diagnósticos recientes y accesos directos a otras funciones."
+    "question": "¿Dónde consulto mis diagnósticos anteriores?",
+    "answer": "En la sección de Diagnósticos puedes ver todos los reportes guardados automáticamente. Ahí puedes revisar el historial completo y seguir el progreso de cada parcela."
   },
   {
     "id": 8,
-    "question": "¿Puedo ver mis parcelas en un mapa?",
-    "answer": "Sí. La sección de Mapa muestra parcelas o áreas de interés, lo que te permite visualizarlas y gestionarlas geográficamente."
+    "question": "¿Qué muestra el Dashboard?",
+    "answer": "El Dashboard te muestra cuántos técnicos están activos, cuántas parcelas están registradas y el avance de las tareas. También incluye datos sobre plagas del mes para ayudarte a prevenir problemas."
   },
   {
     "id": 9,
-    "question": "¿Cómo puedo personalizar mi configuración?",
-    "answer": "Ve a la sección de Configuración para actualizar tus preferencias, administrar notificaciones, cambiar información de la cuenta y configurar opciones del sistema."
+    "question": "¿Brew está disponible en Tsotsil?",
+    "answer": "Sí. En Configuración puedes activar Tsotsil. Creamos un diccionario adaptado al lenguaje agrícola para que técnicos y productores puedan usar la app en su propia lengua."
   },
   {
     "id": 10,
-    "question": "¿Mis datos están seguros?",
-    "answer": "Sí. La aplicación sigue prácticas estándar de seguridad para proteger tu información y garantiza que los datos permanezcan privados y accesibles solo para usuarios autorizados."
+    "question": "¿Por qué Brew es importante para los caficultores?",
+    "answer": "Muchas veces los caficultores pierden gran parte de su cosecha por plagas no detectadas a tiempo. Brew ayuda a identificar esos problemas rápido y a tomar mejores decisiones para cuidar el café mexicano."
   }
 ]
