@@ -1,22 +1,22 @@
 //
-//  LocationsView.swift
+//  AdminLocationsView.swift
 //  brew
 //
-//  Created by AGRM on 09/09/25.
+//  Created for Admin Dashboard
 //
 
 import SwiftUI
 import MapKit
 
-struct LocationsView: View {
+struct AdminLocationsView: View {
     
     @EnvironmentObject private var vm: LocationsViewModel
     
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 19.4326, longitude: -99.1332),
-            latitudinalMeters: 10000,
-            longitudinalMeters: 10000
+            center: CLLocationCoordinate2D(latitude: 15.7845, longitude: -92.7611),
+            latitudinalMeters: 15000,
+            longitudinalMeters: 15000
         )
     )
     
@@ -25,14 +25,11 @@ struct LocationsView: View {
     @State private var selectedFilter: pinKind? = nil
     @State private var selectedLocation: Location? = nil
     @State private var mapStyle: MapStyleOption = .hybrid
-    
-    // MARK: - Nueva sheet unificada
     @State private var activeSheet: SheetType? = nil
+    @State private var showStatistics = false
     
     enum MapStyleOption {
-        case standard
-        case hybrid
-        case imagery
+        case standard, hybrid, imagery
         
         var style: MapStyle {
             switch self {
@@ -49,31 +46,25 @@ struct LocationsView: View {
             case .imagery: return "globe.americas.fill"
             }
         }
-        
-        var label: String {
-            switch self {
-            case .standard: return "Estándar"
-            case .hybrid: return "Híbrido"
-            case .imagery: return "Satélite"
-            }
-        }
     }
     
     enum SheetType: Identifiable {
         case preview(Location)
         case detail(Location)
+        case statistics
         
         var id: String {
             switch self {
             case .preview(let loc): return "preview-\(loc.id)"
             case .detail(let loc): return "detail-\(loc.id)"
+            case .statistics: return "statistics"
             }
         }
     }
     
     var body: some View {
         ZStack {
-            // MARK: - MAP
+            // MAP
             Map(position: $cameraPosition) {
                 ForEach(filteredLocations) { loc in
                     Annotation("", coordinate: loc.coordinates) {
@@ -100,9 +91,11 @@ struct LocationsView: View {
             .mapControls {
                 MapPitchToggle()
                     .mapControlVisibility(.visible)
+                MapCompass()
+                    .mapControlVisibility(.visible)
             }
             .safeAreaInset(edge: .top) {
-                Color.clear.frame(height: 280)
+                Color.clear.frame(height: 320)
             }
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: 100)
@@ -114,43 +107,48 @@ struct LocationsView: View {
                     cameraPosition = .region(
                         MKCoordinateRegion(
                             center: first.coordinates,
-                            latitudinalMeters: 6000,
-                            longitudinalMeters: 6000
+                            latitudinalMeters: 15000,
+                            longitudinalMeters: 15000
                         )
                     )
                 }
             }
             
-            // MARK: - OVERLAYS
-            VStack(spacing: 10) {
+            // OVERLAYS
+            VStack(spacing: 16) {
+                adminHeader
+                    .padding(.horizontal, 20)
+                    .padding(.top, 60)
+                
                 searchBar
                     .padding(.horizontal, 20)
-                    .safeAreaPadding(.top)
                 
                 filterBar
                     .padding(.horizontal, 20)
                 
                 Spacer()
                 
-                mapStyleToggle
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 550)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                HStack {
+                    mapStyleToggle
+                    Spacer()
+                    statisticsButton
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 40)
             }
             
-            // MARK: - SEARCH SUGGESTIONS
+            // SEARCH SUGGESTIONS
             if showSuggestions && !suggestedLocations.isEmpty {
                 suggestionList
                     .transition(.move(edge: .top).combined(with: .opacity))
                     .zIndex(2)
             }
         }
-        // MARK: - SHEET ÚNICA
         .sheet(item: $activeSheet) { sheetType in
             switch sheetType {
             case .preview(let location):
-                LocationPreviewView(
-                    location: selectedLocation ?? location, // ✅ Use selectedLocation so it updates
+                AdminLocationPreviewView(
+                    location: selectedLocation ?? location,
                     onDismiss: { activeSheet = nil },
                     onOpenDetail: {
                         if let selected = selectedLocation {
@@ -158,7 +156,6 @@ struct LocationsView: View {
                         }
                     },
                     onNext: { nextLoc in
-                        // ✅ Just update the selection and camera, DON'T change activeSheet
                         selectedLocation = nextLoc
                         cameraPosition = .region(
                             MKCoordinateRegion(
@@ -169,22 +166,25 @@ struct LocationsView: View {
                         )
                     }
                 )
-                .presentationDetents([.height(200)])
+                .presentationDetents([.height(250)])
                 .presentationDragIndicator(.hidden)
                 .presentationBackgroundInteraction(.enabled)
                 .presentationCornerRadius(20)
-                .interactiveDismissDisabled(false)
                 
             case .detail(let location):
                 LocationDetailView(location: location)
-                .presentationDetents([.large])
+                    .presentationDetents([.large])
+                
+            case .statistics:
+                AdminStatisticsView(locations: vm.locations)
+                    .presentationDetents([.fraction(0.6), .large])
             }
         }
     }
 }
 
 // MARK: - Filtering Logic
-extension LocationsView {
+extension AdminLocationsView {
     private var filteredLocations: [Location] {
         vm.locations.filter { loc in
             let matchesFilter = selectedFilter == nil || loc.kind == selectedFilter
@@ -202,17 +202,50 @@ extension LocationsView {
             loc.cityName.localizedCaseInsensitiveContains(searchText)
         }
     }
+    
+    private var stats: (total: Int, safe: Int, risk: Int, danger: Int) {
+        let total = vm.locations.count
+        let safe = vm.locations.filter { $0.kind == .safe }.count
+        let risk = vm.locations.filter { $0.kind == .risk }.count
+        let danger = vm.locations.filter { $0.kind == .danger }.count
+        return (total, safe, risk, danger)
+    }
 }
 
 // MARK: - UI Components
-extension LocationsView {
+extension AdminLocationsView {
+    
+    private var adminHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Panel Administrativo")
+                    .font(.title2.bold())
+                    .foregroundStyle(.primary)
+                
+                Text("\(stats.total) parcelas monitoreadas")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            HStack(spacing: 12) {
+                AdminStatBadge(count: stats.safe, color: .green, icon: "checkmark.circle.fill")
+                AdminStatBadge(count: stats.risk, color: .yellow, icon: "exclamationmark.triangle.fill")
+                AdminStatBadge(count: stats.danger, color: .red, icon: "xmark.octagon.fill")
+            }
+        }
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: 16).fill(.regularMaterial))
+        .shadow(color: .black.opacity(0.1), radius: 8, y: 4)
+    }
     
     private var searchBar: some View {
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.tint)
             
-            TextField("Buscar parcela...", text: $searchText)
+            TextField("Buscar parcela o productor...", text: $searchText)
                 .font(.subheadline)
                 .onChange(of: searchText) { _, newVal in
                     withAnimation(.easeInOut) {
@@ -224,23 +257,33 @@ extension LocationsView {
                         showSuggestions = false
                     }
                 }
+            
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                    showSuggestions = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .background(RoundedRectangle(cornerRadius: 16).fill(.regularMaterial))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(.tint.opacity(0.2), lineWidth: 1))
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
     
     private var filterBar: some View {
-        HStack(spacing: 16) {
-            filterButton(kind: nil, icon: "leaf.fill", color: .gray, label: "Todos")
+        HStack(spacing: 12) {
+            filterButton(kind: nil, icon: "leaf.fill", color: .gray, label: "Todas")
             filterButton(kind: .safe, icon: "checkmark.circle.fill", color: .green, label: "Sanas")
-            filterButton(kind: .risk, icon: "exclamationmark.circle.fill", color: .yellow, label: "En riesgo")
+            filterButton(kind: .risk, icon: "exclamationmark.circle.fill", color: .yellow, label: "Riesgo")
             filterButton(kind: .danger, icon: "xmark.octagon.fill", color: .red, label: "Afectadas")
         }
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
         .background(RoundedRectangle(cornerRadius: 14).fill(.regularMaterial))
         .shadow(color: .black.opacity(0.05), radius: 3, y: 1)
     }
@@ -251,16 +294,17 @@ extension LocationsView {
                 selectedFilter = selectedFilter == kind ? nil : kind
             }
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Image(systemName: icon)
                     .foregroundStyle(color)
-                    .font(.system(size: 20))
+                    .font(.system(size: 22))
                 Text(label)
-                    .font(.caption2)
+                    .font(.caption2.weight(.medium))
                     .foregroundColor(.primary)
             }
-            .padding(6)
-            .frame(width: 70)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+            .frame(width: 76)
             .background(
                 RoundedRectangle(cornerRadius: 10)
                     .fill(selectedFilter == kind ? color.opacity(0.15) : .clear)
@@ -325,6 +369,8 @@ extension LocationsView {
                                 showSuggestions = false
                                 selectedFilter = nil
                                 vm.showNextLocation(location: loc)
+                                selectedLocation = loc
+                                activeSheet = .preview(loc)
                                 cameraPosition = .region(
                                     MKCoordinateRegion(
                                         center: loc.coordinates,
@@ -336,7 +382,7 @@ extension LocationsView {
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: iconForKind(loc.kind))
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(colorForKind(loc.kind))
                                 VStack(alignment: .leading) {
                                     Text(loc.name)
                                         .font(.headline)
@@ -345,6 +391,9 @@ extension LocationsView {
                                         .foregroundStyle(.secondary)
                                 }
                                 Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
                             }
                             .padding()
                             .background(.regularMaterial)
@@ -354,12 +403,20 @@ extension LocationsView {
                 }
             }
         }
-        .frame(maxHeight: 200)
+        .frame(maxHeight: 250)
         .background(.regularMaterial)
         .cornerRadius(14)
         .padding(.horizontal, 20)
-        .padding(.top, 120)
+        .padding(.top, 220)
         .shadow(radius: 5)
+    }
+    
+    private func colorForKind(_ kind: pinKind) -> Color {
+        switch kind {
+        case .safe: return .green
+        case .risk: return .yellow
+        case .danger: return .red
+        }
     }
     
     private var mapStyleToggle: some View {
@@ -389,19 +446,49 @@ extension LocationsView {
             }
         } label: {
             Image(systemName: mapStyle.icon)
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(.primary)
-                .frame(width: 44, height: 47)
-                .background(
-                    Circle()
-                        .fill(.regularMaterial)
-                )
-                .shadow(color: .black.opacity(0.15), radius: 3, y: 1)
+                .frame(width: 50, height: 50)
+                .background(Circle().fill(.regularMaterial))
+                .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+        }
+    }
+    
+    private var statisticsButton: some View {
+        Button {
+            activeSheet = .statistics
+        } label: {
+            Image(systemName: "chart.bar.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 50, height: 50)
+                .background(Circle().fill(.regularMaterial))
+                .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
         }
     }
 }
 
+// MARK: - Stat Badge
+struct AdminStatBadge: View {
+    let count: Int
+    let color: Color
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text("\(count)")
+                .font(.caption.bold())
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(color.opacity(0.15), in: Capsule())
+    }
+}
+
 #Preview {
-    LocationsView()
+    AdminLocationsView()
         .environmentObject(LocationsViewModel())
 }

@@ -29,20 +29,18 @@ struct DiagnosticView: View {
             if viewModel.isProcessing {
                 analyzingOverlay
             }
-        }
-        .navigationTitle("Diagnósticos")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                // Camera Button
-                Button(action: {
-                    showCamera = true
-                }) {
-                    Image(systemName: "camera.fill")
-                        .font(.system(size: 25))
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(Circle().fill(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255)))
-                        .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+            .navigationTitle("Diagnósticos")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    // Camera Button
+                    Button(action: {
+                        showCamera = true
+                    }) {
+                        Image(systemName: "camera.fill")
+                            .font(.system(size: 30))
+                            .foregroundColor(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255))
+                    }
+                    .accessibilityLabel("Abrir cámara para diagnóstico")
                 }
                 .accessibilityLabel("Abrir cámara para diagnóstico")
             }
