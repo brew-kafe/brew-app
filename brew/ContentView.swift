@@ -5,6 +5,7 @@
 //  Created by toño on 02/09/25.
 //
 
+
 import SwiftUI
 
 struct ContentView: View {
@@ -13,9 +14,11 @@ struct ContentView: View {
     @StateObject private var languageManager = LanguageManager.shared
     
     var body: some View {
-        TabBarView()
-            .environmentObject(locationsViewModel)
-            .environmentObject(reportViewModel)    }
+        // Este ContentView ya no es necesario si estamos usando directamente
+        // TabBarViewTecnico o TabBarViewAdmin en brewApp.swift
+        // Puedes eliminarlo o mantenerlo como referencia
+        EmptyView()
+    }
 }
 
 // MARK: - Enhanced DashboardView with data integration
