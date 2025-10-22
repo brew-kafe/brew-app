@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class DiagnosisEntity {
+class DiagnosisEntity {
     @Attribute(.unique) var id: UUID
     var parcelName: String
     var plantNumber: String?
@@ -17,13 +17,15 @@ final class DiagnosisEntity {
     var primaryDeficiency: String
     var deficiencyElement: String
     var detectionState: String
-    var aiConfidence: Double?
-    var aiDescription: String?
-    var aiRecommendations: [String]
-    var allElements: [ElementAnalysis]  // Custom struct
-    var photoURLs: [String]
+    var aiConfidence: Double
+    var aiDescription: String
     var diagnosisDate: Date
     var createdAt: Date
+    
+    // Stored as JSON Data
+    var aiRecommendationsData: Data?
+    var allElementsData: Data?
+    var photoURLsData: Data?
     
     init(
         id: UUID = UUID(),
@@ -33,13 +35,13 @@ final class DiagnosisEntity {
         primaryDeficiency: String,
         deficiencyElement: String,
         detectionState: String,
-        aiConfidence: Double? = nil,
-        aiDescription: String? = nil,
+        aiConfidence: Double = 0.0,
+        aiDescription: String = "",
         aiRecommendations: [String] = [],
         allElements: [ElementAnalysis] = [],
         photoURLs: [String] = [],
-        diagnosisDate: Date = .now,
-        createdAt: Date = .now
+        diagnosisDate: Date = Date(),
+        createdAt: Date = Date()
     ) {
         self.id = id
         self.parcelName = parcelName
@@ -50,11 +52,58 @@ final class DiagnosisEntity {
         self.detectionState = detectionState
         self.aiConfidence = aiConfidence
         self.aiDescription = aiDescription
-        self.aiRecommendations = aiRecommendations
-        self.allElements = allElements
-        self.photoURLs = photoURLs
         self.diagnosisDate = diagnosisDate
         self.createdAt = createdAt
+        
+        // Encode to Data
+        self.aiRecommendationsData = try? JSONEncoder().encode(aiRecommendations)
+        self.allElementsData = try? JSONEncoder().encode(allElements)
+        self.photoURLsData = try? JSONEncoder().encode(photoURLs)
+    }
+    
+    // MARK: - Computed Properties for Decoding
+    
+    var aiRecommendations: [String] {
+        get {
+            guard let data = aiRecommendationsData,
+                  let decoded = try? JSONDecoder().decode([String].self, from: data) else {
+                return []
+            }
+            return decoded
+        }
+        set {
+            aiRecommendationsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
+    var allElements: [ElementAnalysis] {
+        get {
+            guard let data = allElementsData,
+                  let decoded = try? JSONDecoder().decode([ElementAnalysis].self, from: data) else {
+                return []
+            }
+            return decoded
+        }
+        set {
+            allElementsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
+    var photoURLs: [String] {
+        get {
+            guard let data = photoURLsData,
+                  let decoded = try? JSONDecoder().decode([String].self, from: data) else {
+                return []
+            }
+            return decoded
+        }
+        set {
+            photoURLsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
+    /// Computed property to get DetectionState enum from string
+    var detectionStateEnum: DetectionState? {
+        return DetectionState(rawValue: detectionState)
     }
 }
-

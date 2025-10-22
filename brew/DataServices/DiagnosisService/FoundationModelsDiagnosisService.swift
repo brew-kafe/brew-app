@@ -187,12 +187,8 @@ class FoundationModelsDiagnosisService: ObservableObject {
         Always base your diagnosis on established agricultural science and coffee cultivation best practices.
         """
 
-        do {
-            session = LanguageModelSession(instructions: instructions)
-            print("✅ Foundation Models session initialized successfully")
-        } catch {
-            print("❌ Failed to create LanguageModelSession: \(error.localizedDescription)")
-        }
+        session = LanguageModelSession(instructions: instructions)
+        print("✅ Foundation Models session initialized successfully")
     }
 
     // MARK: - Ensure Session
@@ -227,7 +223,7 @@ class FoundationModelsDiagnosisService: ObservableObject {
         }
         
         isGenerating = true
-        generationProgress = "Analyzing photo results..."
+        generationProgress = "Analizando foto..."
         currentDiagnosis = nil
         error = nil
         
@@ -238,7 +234,7 @@ class FoundationModelsDiagnosisService: ObservableObject {
         )
         
         do {
-            generationProgress = "Generating comprehensive diagnosis..."
+            generationProgress = "Generando diagnóstico..."
 
             // Use streaming for better UX
             let stream = session.streamResponse(
@@ -258,13 +254,13 @@ class FoundationModelsDiagnosisService: ObservableObject {
                 
                 // Update progress based on what fields are populated
                 if partialResponse.content.title != nil {
-                    generationProgress = "Analyzing plant condition..."
+                    generationProgress = "Analizando condición de la planta..."
                 }
                 if partialResponse.content.primaryDeficiency != nil {
-                    generationProgress = "Identifying deficiencies..."
+                    generationProgress = "Identificando deficiencias..."
                 }
                 if partialResponse.content.recommendations != nil {
-                    generationProgress = "Generating recommendations..."
+                    generationProgress = "Generando recomendaciones..."
                 }
                 
                 // Check if this is the final complete response
@@ -325,7 +321,7 @@ class FoundationModelsDiagnosisService: ObservableObject {
                 }
             }
             
-            generationProgress = "Diagnosis complete!"
+            generationProgress = "¡Diagnóstico generado!"
             isGenerating = false
             
             guard let diagnosis = finalDiagnosis else {
@@ -359,9 +355,9 @@ class FoundationModelsDiagnosisService: ObservableObject {
     ) -> Prompt {
         
         let analysisResults = photoAnalysis.map { result in
-            "- \(result.displayName): \(String(format: "%.1f", result.confidence * 100))% confidence"
-            + (result.nutrient != nil ? " (affects \(result.nutrient!))" : "")
-            + " - Severity: \(result.severity)"
+            "- \(result.displayName): \(String(format: "%.1f", result.confidence * 100))% confianza"
+            + (result.nutrient != nil ? " (afecta \(result.nutrient!))" : "")
+            + " - Nivel de severidad: \(result.severity)"
         }.joined(separator: "\n")
         
         return Prompt {
@@ -433,35 +429,37 @@ enum DiagnosisGenerationError: LocalizedError {
 // MARK: - Conversion Extensions
 
 extension AIGeneratedDiagnosis {
-    func toAIPlantDiagnosis(
+    func toDiagnosisEntity(
         parcelName: String,
+        plantNumber: String? = nil,
         technicianName: String,
         photoUrls: [String]
-    ) -> AIPlantDiagnosis {
+    ) -> DiagnosisEntity {
         
         let convertedElements = elementAnalysis.map { element in
             ElementAnalysis(
                 element: element.element,
                 percentage: element.percentage,
-                detectionState: DetectionState(rawValue: element.detectionState) ?? .moderate,
+                detectionState: element.detectionState,
                 deficiencyLevel: element.deficiencyLevel,
                 recommendations: element.recommendations
             )
         }
         
-        return AIPlantDiagnosis(
+        return DiagnosisEntity(
             parcelName: parcelName,
+            plantNumber: plantNumber,
             technicianName: technicianName,
-            diagnosisDate: Date(),
             primaryDeficiency: primaryDeficiency,
             deficiencyElement: deficiencyElement,
-            detectionState: DetectionState(rawValue: detectionState) ?? .moderate,
-            aiDiagnosisDescription: detailedDescription,
+            detectionState: detectionState,
+            aiConfidence: confidencePercentage / 100.0,
+            aiDescription: detailedDescription,
             aiRecommendations: recommendations,
             allElements: convertedElements,
-            photoUrls: photoUrls,
-            aiConfidence: confidencePercentage / 100.0,
-            analysisTimestamp: Date()
+            photoURLs: photoUrls,
+            diagnosisDate: Date(),
+            createdAt: Date()
         )
     }
 }
