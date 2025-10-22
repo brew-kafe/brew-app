@@ -49,10 +49,6 @@ struct TabBarView: View {
             }
             .tabItem { Label("Mapa", systemImage: "map.fill") }
 
-            NavigationStack {
-                SettingsView()
-            }
-            .tabItem { Label("Ajustes", systemImage: "gearshape") }
         }
         .tint(Color(hex: "#737839"))
     }
