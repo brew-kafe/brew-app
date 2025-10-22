@@ -1,14 +1,14 @@
 //
-//  LocationPreviewView.swift
+//  AdminLocationPreviewView.swift
 //  brew
 //
-//  Created by AGRM on 10/09/25.
+//  Created for Admin Dashboard
 //
 
 import SwiftUI
 import MapKit
 
-struct LocationPreviewView: View {
+struct AdminLocationPreviewView: View {
     @EnvironmentObject private var vm: LocationsViewModel
     let location: Location
     let onDismiss: () -> Void
@@ -33,12 +33,24 @@ struct LocationPreviewView: View {
                         .shadow(radius: 3)
                 }
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(location.name)
-                        .font(.title3).bold()
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(location.name)
+                            .font(.title3).bold()
+                        
+                        statusBadge
+                    }
+                    
                     Text(location.cityName)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    
+                    // Quick metrics
+                    HStack(spacing: 12) {
+                        MetricPill(icon: "drop.fill", value: "\(location.metrics.moisture)%", color: .blue)
+                        MetricPill(icon: "sun.max.fill", value: "\(location.metrics.sun)%", color: .orange)
+                        MetricPill(icon: "exclamationmark.triangle.fill", value: "\(location.metrics.pestSeverity)%", color: location.metrics.pestSeverity > 50 ? .red : .yellow)
+                    }
                 }
                 
                 Spacer()
@@ -57,7 +69,7 @@ struct LocationPreviewView: View {
             
             // BUTTONS
             HStack(spacing: 12) {
-                conocerButton
+                detailButton
                 nextButton
             }
             .padding(.horizontal)
@@ -65,13 +77,34 @@ struct LocationPreviewView: View {
         }
     }
     
-    private var conocerButton: some View {
+    private var statusBadge: some View {
+        let (color, icon) = statusInfo
+        return HStack(spacing: 4) {
+            Image(systemName: icon)
+            Text(location.status)
+        }
+        .font(.caption2.bold())
+        .foregroundStyle(color)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(color.opacity(0.15), in: Capsule())
+    }
+    
+    private var statusInfo: (Color, String) {
+        switch location.kind {
+        case .safe: return (.green, "checkmark.circle.fill")
+        case .risk: return (.yellow, "exclamationmark.triangle.fill")
+        case .danger: return (.red, "xmark.octagon.fill")
+        }
+    }
+    
+    private var detailButton: some View {
         Button {
             withAnimation(.easeInOut) {
                 onOpenDetail()
             }
         } label: {
-            Label("Conocer", systemImage: "info.circle")
+            Label("Ver detalles", systemImage: "doc.text.magnifyingglass")
                 .frame(maxWidth: .infinity)
                 .frame(height: 45)
         }
@@ -80,12 +113,10 @@ struct LocationPreviewView: View {
     
     private var nextButton: some View {
         Button {
-            // ✅ Find next location
             guard let currentIndex = vm.locations.firstIndex(where: { $0.id == location.id }) else { return }
             let nextIndex = (currentIndex + 1) % vm.locations.count
             let nextLocation = vm.locations[nextIndex]
             
-            // ✅ Just update the ViewModel and notify parent - DON'T change sheet
             withAnimation(.spring) {
                 vm.mapLocation = nextLocation
                 onNext(nextLocation)
@@ -99,10 +130,29 @@ struct LocationPreviewView: View {
     }
 }
 
+struct MetricPill: View {
+    let icon: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(value)
+                .font(.caption2.bold())
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 3)
+        .background(color.opacity(0.12), in: Capsule())
+    }
+}
+
 #Preview {
     ZStack {
         Color.green.ignoresSafeArea()
-        LocationPreviewView(
+        AdminLocationPreviewView(
             location: LocationsDataService.locations.first!,
             onDismiss: {},
             onOpenDetail: {},

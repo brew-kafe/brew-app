@@ -3,90 +3,232 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct CreateReportView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var reportName: String = ""
-    @State private var isCreatingReport: Bool = false
-    @State private var showAlert: Bool = false
-    @State private var alertMessage: String = ""
-    @State private var selectedDiagnosis: DiagnosisEntity? = nil
+    @ObservedObject var viewModel: ReportViewModel
+    @ObservedObject var diagnosisViewModel: DiagnosisViewModel
+    let modelContext: ModelContext
     
-    var diagnoses: [DiagnosisEntity]
-    var onCreate: (String, DiagnosisEntity?) -> Void
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var reportTitle: String = ""
+    @State private var selectedDiagnosisIds: Set<UUID> = []
+    @State private var reportType: ReportType = .nutrition
+    @State private var notes: String = ""
+    @State private var performanceScore: String = ""
     
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Report Name")) {
-                    TextField("Enter report name", text: $reportName)
+                Section(header: Text("Información del Reporte")) {
+                    TextField("Título del reporte", text: $reportTitle)
                         .autocapitalization(.words)
-                }
-                
-                Section(header: Text("Select the diagnose that you want to include in this report")) {
-                    Picker("Select Diagnosis", selection: $selectedDiagnosis) {
-                        Text("None").tag(nil as DiagnosisEntity?)
-                        ForEach(diagnoses, id: \.id) { diagnosis in
-                            Text("\(diagnosis.parcelName) – Plant \(diagnosis.plantNumber ?? "N/A")")
-                                .tag(diagnosis as DiagnosisEntity?)
+                    
+                    Picker("Tipo de Reporte", selection: $reportType) {
+                        ForEach(ReportType.allCases, id: \.self) { type in
+                            Label(type.displayName, systemImage: type.icon)
+                                .tag(type)
                         }
                     }
-                    .pickerStyle(MenuPickerStyle())
+                    
+                    TextField("Puntuación (opcional)", text: $performanceScore)
+                        .keyboardType(.decimalPad)
+                    
+                    TextField("Notas (opcional)", text: $notes, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+                
+                Section(header: Text("Seleccionar Diagnósticos")) {
+                    if diagnosisViewModel.diagnosesList.isEmpty {
+                        Text("No hay diagnósticos disponibles")
+                            .foregroundColor(.secondary)
+                    } else {
+                        ForEach(diagnosisViewModel.diagnosesList) { diagnosis in
+                            DiagnosisSelectionRow(
+                                diagnosis: diagnosis,
+                                isSelected: selectedDiagnosisIds.contains(diagnosis.id),
+                                onToggle: { toggleDiagnosisSelection(diagnosis.id) }
+                            )
+                        }
+                    }
                 }
                 
                 Section {
                     Button(action: createReport) {
                         HStack {
                             Spacer()
-                            if isCreatingReport {
+                            if viewModel.isProcessing {
                                 ProgressView()
                             } else {
-                                Text("Create Report")
+                                Text("Crear Reporte")
                                     .bold()
                             }
                             Spacer()
                         }
                     }
-                    .disabled(reportName.trimmingCharacters(in: .whitespaces).isEmpty || isCreatingReport)
+                    .disabled(reportTitle.isEmpty || selectedDiagnosisIds.isEmpty || viewModel.isProcessing)
+                }
+                
+                // Show error or success message
+                if let error = viewModel.errorMessage {
+                    Section {
+                        Text(error)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
                 }
             }
-            .navigationTitle("New Report")
-            .navigationBarItems(leading: Button("Cancel") {
-                dismiss()
-            })
-            .alert(isPresented: $showAlert) {
-                Alert(title: Text("Error"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
-            }
+            .navigationTitle("Nuevo Reporte")
+            .navigationBarItems(
+                leading: Button("Cancelar") {
+                    dismiss()
+                },
+                trailing: selectedDiagnosisIds.isEmpty ? nil : Text("\(selectedDiagnosisIds.count) seleccionados")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            )
         }
     }
     
     private func createReport() {
-        let trimmedName = reportName.trimmingCharacters(in: .whitespaces)
-        guard !trimmedName.isEmpty else {
-            alertMessage = "Report name cannot be empty."
-            showAlert = true
-            return
+        Task {
+            // Parse performance score
+            let score = Double(performanceScore.trimmingCharacters(in: .whitespaces))
+            
+            await viewModel.createReport(
+                title: reportTitle,
+                diagnosisIds: Array(selectedDiagnosisIds),
+                reportType: reportType,
+                notes: notes.isEmpty ? nil : notes,
+                performanceScore: score,
+                modelContext: modelContext
+            )
+            
+            // Dismiss if successful
+            if viewModel.errorMessage == nil {
+                dismiss()
+            }
         }
-        
-        isCreatingReport = true
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            isCreatingReport = false
-            onCreate(trimmedName, selectedDiagnosis)
-            dismiss()
+    }
+    
+    private func colorForState(_ state: DetectionState) -> Color {
+        switch state {
+        case .danger: return .red
+        case .moderate: return .orange
+        case .optimal: return .green
+        }
+    }
+    
+    private func toggleDiagnosisSelection(_ diagnosisId: UUID) {
+        if selectedDiagnosisIds.contains(diagnosisId) {
+            selectedDiagnosisIds.remove(diagnosisId)
+        } else {
+            selectedDiagnosisIds.insert(diagnosisId)
         }
     }
 }
 
+// MARK: - Diagnosis Selection Row
+struct DiagnosisSelectionRow: View {
+    let diagnosis: DiagnosisEntity
+    let isSelected: Bool
+    let onToggle: () -> Void
+    
+    var body: some View {
+        Button(action: onToggle) {
+            HStack {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(isSelected ? .blue : .gray)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(diagnosis.parcelName)
+                        .foregroundColor(.primary)
+                        .font(.headline)
+                    
+                    HStack {
+                        if let plantNumber = diagnosis.plantNumber {
+                            Text("Planta \(plantNumber)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Text("•")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text(diagnosis.primaryDeficiency)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    // Detection state badge
+                    if let state = diagnosis.detectionStateEnum {
+                        Label(state.displayName, systemImage: state.icon)
+                            .font(.caption2)
+                            .foregroundColor(state.color)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(state.color.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Preview
 #Preview {
-    // Example diagnoses to preview
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(
+        for: DiagnosisEntity.self, ReportEntity.self,
+        configurations: config
+    )
+    let context = container.mainContext
+    
+    // Create sample diagnoses
     let sampleDiagnoses = [
-        DiagnosisEntity(parcelName: "Parcel A", plantNumber: "1", technicianName: "Luis", primaryDeficiency: "Nitrogen Deficiency", deficiencyElement: "Nitrogen", detectionState: "CONFIRMED", allElements: [], photoURLs: [], diagnosisDate: Date(), createdAt: Date()),
-        DiagnosisEntity(parcelName: "Parcel B", plantNumber: "2", technicianName: "Ana", primaryDeficiency: "Healthy Plant", deficiencyElement: "None", detectionState: "HEALTHY", allElements: [], photoURLs: [], diagnosisDate: Date(), createdAt: Date()),
-        DiagnosisEntity(parcelName: "Parcel C", plantNumber: "3", technicianName: "Miguel", primaryDeficiency: "Iron Deficiency", deficiencyElement: "Iron", detectionState: "CONFIRMED", allElements: [], photoURLs: [], diagnosisDate: Date(), createdAt: Date())
+        DiagnosisEntity(
+            parcelName: "Parcela A",
+            plantNumber: "001",
+            technicianName: "Luis",
+            primaryDeficiency: "Nitrogen Deficiency",
+            deficiencyElement: "Nitrogen",
+            detectionState: "danger",
+            aiConfidence: 0.92,
+            aiDescription: "Severe deficiency",
+            aiRecommendations: ["Apply fertilizer"],
+            allElements: [],
+            photoURLs: []
+        ),
+        DiagnosisEntity(
+            parcelName: "Parcela B",
+            plantNumber: "002",
+            technicianName: "Ana",
+            primaryDeficiency: "Healthy Plant",
+            deficiencyElement: "None",
+            detectionState: "optimal",
+            aiConfidence: 0.98,
+            aiDescription: "Optimal health",
+            aiRecommendations: ["Maintain care"],
+            allElements: [],
+            photoURLs: []
+        )
     ]
     
-    CreateReportView(diagnoses: sampleDiagnoses) { name, selected in
-        print("Created report: \(name), diagnosis: \(selected?.primaryDeficiency ?? "None")")
+    for diagnosis in sampleDiagnoses {
+        context.insert(diagnosis)
     }
+    
+    let viewModel = ReportViewModel()
+    let diagnosisViewModel = DiagnosisViewModel()
+    diagnosisViewModel.diagnosesList = sampleDiagnoses
+    
+    return CreateReportView(
+        viewModel: viewModel,
+        diagnosisViewModel: diagnosisViewModel,
+        modelContext: context
+    )
+    .modelContainer(container)
 }

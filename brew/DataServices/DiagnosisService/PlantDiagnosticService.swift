@@ -7,288 +7,235 @@
 
 import Foundation
 import CoreML
-import Vision
+@preconcurrency import Vision
 import UIKit
 
-// MARK: - Keep your existing ClassificationResult for CoreML
-struct ClassificationResult: Codable {
+// MARK: - Classification Result (CoreML Output)
+struct ClassificationResult: Codable, Identifiable {
+    let id = UUID()
     let identifier: String
     let confidence: Float
     let nutrient: String?
     let severity: String
     let displayName: String
+    
+    enum CodingKeys: String, CodingKey {
+        case identifier, confidence, nutrient, severity, displayName
+    }
 }
 
-// MARK: - Updated API Configuration
-struct APIConfig {
-    static let baseURL = "http://127.0.0.1:8000/api"  // Updated to match your FastAPI structure
-}
-
-// MARK: - Updated Plant Diagnostic Service
+// MARK: - Plant Diagnostic Service (CoreML Only)
+/// Handles local CoreML model inference for plant disease/deficiency detection
 class PlantDiagnosticService: ObservableObject {
     static let shared = PlantDiagnosticService()
+    
     private var model: VNCoreMLModel?
-    private let session = URLSession.shared
+    @Published var isModelLoaded = false
+    @Published var modelError: String?
     
     private init() {
         loadModel()
     }
-
-    // MARK: - Keep your existing CoreML functionality
+    
+    // MARK: - Model Loading
     private func loadModel() {
-        do {
-            let config = MLModelConfiguration()
-            config.computeUnits = .all
-            let mlModel = try PlantDiagnostic(configuration: config)
-            model = try VNCoreMLModel(for: mlModel.model)
-            print("✅ PlantDiagnostic model loaded successfully")
-        } catch {
-            print("❌ Failed to load CoreML model: \(error.localizedDescription)")
-        }
-    }
-
-    func classifyImage(_ image: UIImage, completion: @escaping (Result<[ClassificationResult], Error>) -> Void) {
-        guard let model = model else {
-            completion(.failure(NSError(domain: "PlantDiagnosticService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Model not loaded"])))
-            return
-        }
-
-        guard let ciImage = CIImage(image: image) else {
-            completion(.failure(NSError(domain: "PlantDiagnosticService", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to convert image"])))
-            return
-        }
-
-        let request = VNCoreMLRequest(model: model) { [weak self] request, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-
-            guard let results = request.results as? [VNClassificationObservation] else {
-                completion(.failure(NSError(domain: "PlantDiagnosticService", code: 3, userInfo: [NSLocalizedDescriptionKey: "No results"])))
-                return
-            }
-
-            let classifications = self?.processResults(results) ?? []
-            completion(.success(classifications))
-        }
-
-        request.imageCropAndScaleOption = .centerCrop
-        let handler = VNImageRequestHandler(ciImage: ciImage)
-
-        DispatchQueue.global(qos: .userInitiated).async {
-            try? handler.perform([request])
-        }
-    }
-
-    private func processResults(_ observations: [VNClassificationObservation]) -> [ClassificationResult] {
-        observations
-            .filter { $0.confidence > 0.1 }
-            .map { obs in
-                ClassificationResult(
-                    identifier: obs.identifier,
-                    confidence: obs.confidence,
-                    nutrient: mapToNutrient(obs.identifier),
-                    severity: determineSeverity(confidence: obs.confidence),
-                    displayName: displayName(for: obs.identifier)
-                )
-            }
-            .sorted { $0.confidence > $1.confidence }
-    }
-
-    private func mapToNutrient(_ id: String) -> String? {
-        switch id.lowercased() {
-        case "nitrogeno": return "nitrogen"
-        case "fosforo": return "phosphorus"
-        case "potasio": return "potassium"
-        case "calcio": return "calcium"
-        case "magnesio": return "magnesium"
-        case "hierro": return "iron"
-        case "manganeso": return "manganese"
-        case "zinc": return "zinc"
-        case "azufre": return "sulfur"
-        case "boro": return "boron"
-        default: return nil
-        }
-    }
-
-    private func determineSeverity(confidence: Float) -> String {
-        if confidence >= 0.8 { return "severe" }
-        if confidence >= 0.5 { return "moderate" }
-        return "mild"
-    }
-
-    private func displayName(for id: String) -> String {
-        switch id.lowercased() {
-        case "saludable": return "Planta Saludable"
-        case "broca": return "Plaga: Broca del Café"
-        case "roya": return "Enfermedad: Roya del Café"
-        default: return "Deficiencia de \(id.capitalized)"
-        }
-    }
-
-    // MARK: - New API Methods matching your diagnosis endpoints
-    func analyzePhoto(
-        image: UIImage,
-        parcelName: String = "Unknown Parcel",
-        technicianName: String = "Unknown Technician"
-    ) async throws -> PhotoAnalysisResponse {
-        guard let url = URL(string: "\(APIConfig.baseURL)/diagnosis/analyze-photo") else {
-            throw DiagnosisError.invalidURL
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        
-        let boundary = UUID().uuidString
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        
-        let body = createMultipartBody(
-            image: image,
-            parcelName: parcelName,
-            technicianName: technicianName,
-            boundary: boundary
-        )
-        
-        request.httpBody = body
-        
-        let (data, response) = try await session.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw DiagnosisError.serverError
-        }
-        
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        
-        return try decoder.decode(PhotoAnalysisResponse.self, from: data)
-    }
-    
-    func createDiagnosisFromAnalysis(
-        request: DiagnosisCreateRequest
-    ) async throws -> DiagnosisCreateResponse {
-        guard let url = URL(string: "\(APIConfig.baseURL)/diagnosis/create-from-diagnosis") else {
-            throw DiagnosisError.invalidURL
-        }
-        
-        var urlRequest = URLRequest(url: url)
-        urlRequest.httpMethod = "POST"
-        urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        urlRequest.httpBody = try encoder.encode(request)
-        
-        let (data, response) = try await session.data(for: urlRequest)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw DiagnosisError.serverError
-        }
-        
-        return try JSONDecoder().decode(DiagnosisCreateResponse.self, from: data)
-    }
-    
-    func getDetectionStates() async throws -> DetectionStateResponse {
-        guard let url = URL(string: "\(APIConfig.baseURL)/diagnosis/detection-states") else {
-            throw DiagnosisError.invalidURL
-        }
-        
-        let (data, _) = try await session.data(from: url)
-        return try JSONDecoder().decode(DetectionStateResponse.self, from: data)
-    }
-    
-    func getSupportedElements() async throws -> ElementListResponse {
-        guard let url = URL(string: "\(APIConfig.baseURL)/diagnosis/elements") else {
-            throw DiagnosisError.invalidURL
-        }
-        
-        let (data, _) = try await session.data(from: url)
-        return try JSONDecoder().decode(ElementListResponse.self, from: data)
-    }
-    
-    // MARK: - Helper method for multipart form data
-    private func createMultipartBody(
-        image: UIImage,
-        parcelName: String,
-        technicianName: String,
-        boundary: String
-    ) -> Data {
-        var body = Data()
-        
-        // Add image file
-        if let imageData = image.jpegData(compressionQuality: 0.8) {
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"file\"; filename=\"plant.jpg\"\r\n".data(using: .utf8)!)
-            body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-            body.append(imageData)
-            body.append("\r\n".data(using: .utf8)!)
-        }
-        
-        // Add parcel_name
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"parcel_name\"\r\n\r\n".data(using: .utf8)!)
-        body.append(parcelName.data(using: .utf8)!)
-        body.append("\r\n".data(using: .utf8)!)
-        
-        // Add technician_name
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"technician_name\"\r\n\r\n".data(using: .utf8)!)
-        body.append(technicianName.data(using: .utf8)!)
-        body.append("\r\n".data(using: .utf8)!)
-        
-        body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-        return body
-    }
-
-    // MARK: - Legacy methods (keep for backward compatibility if needed)
-    func uploadDiagnosis(_ diagnosis: DiagnosisDTO, completion: @escaping (Result<DiagnosisDTO, Error>) -> Void) {
-        // Keep your existing implementation if still needed
-        var request = URLRequest(url: URL(string: "\(APIConfig.baseURL)/diagnosis")!)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        do {
-            request.httpBody = try JSONEncoder().encode(diagnosis)
-        } catch {
-            completion(.failure(error))
-            return
-        }
-
-        session.dataTask(with: request) { data, _, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-
-            guard let data = data else {
-                completion(.failure(NSError(domain: "NoData", code: 0)))
-                return
-            }
-
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             do {
-                let decoded = try JSONDecoder().decode(DiagnosisDTO.self, from: data)
-                completion(.success(decoded))
+                let config = MLModelConfiguration()
+                config.computeUnits = .all
+                
+                let mlModel = try PlantDiagnostic(configuration: config)
+                let visionModel = try VNCoreMLModel(for: mlModel.model)
+                
+                DispatchQueue.main.async {
+                    self?.model = visionModel
+                    self?.isModelLoaded = true
+                    print("✅ PlantDiagnostic CoreML model loaded successfully")
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    self?.modelError = error.localizedDescription
+                    print("❌ Failed to load CoreML model: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    // MARK: - Image Classification
+    /// Classifies a plant image using the local CoreML model
+    func classifyImage(_ image: UIImage) async throws -> [ClassificationResult] {
+        guard let model = model else {
+            throw PlantDiagnosticError.modelNotLoaded
+        }
+        
+        guard let ciImage = CIImage(image: image) else {
+            throw PlantDiagnosticError.invalidImage
+        }
+        
+        return try await withCheckedThrowingContinuation { continuation in
+            let request = VNCoreMLRequest(model: model) { [weak self] request, error in
+                if let error = error {
+                    continuation.resume(throwing: PlantDiagnosticError.classificationFailed(error))
+                    return
+                }
+                
+                guard let results = request.results as? [VNClassificationObservation] else {
+                    continuation.resume(throwing: PlantDiagnosticError.noResults)
+                    return
+                }
+                
+                let classifications = self?.processResults(results) ?? []
+                continuation.resume(returning: classifications)
+            }
+            
+            request.imageCropAndScaleOption = .centerCrop
+            
+            let handler = VNImageRequestHandler(ciImage: ciImage, options: [:])
+            
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    try handler.perform([request])
+                } catch {
+                    continuation.resume(throwing: PlantDiagnosticError.classificationFailed(error))
+                }
+            }
+        }
+    }
+    
+    /// Legacy callback-based classification method (for backward compatibility)
+    func classifyImage(_ image: UIImage, completion: @escaping (Result<[ClassificationResult], Error>) -> Void) {
+        Task {
+            do {
+                let results = try await classifyImage(image)
+                completion(.success(results))
             } catch {
                 completion(.failure(error))
             }
-        }.resume()
+        }
+    }
+    
+    // MARK: - Result Processing
+    private func processResults(_ observations: [VNClassificationObservation]) -> [ClassificationResult] {
+        observations
+            .filter { $0.confidence > 0.1 } // Filter low confidence results
+            .map { observation in
+                ClassificationResult(
+                    identifier: observation.identifier,
+                    confidence: observation.confidence,
+                    nutrient: mapToNutrient(observation.identifier),
+                    severity: determineSeverity(confidence: observation.confidence),
+                    displayName: displayName(for: observation.identifier)
+                )
+            }
+            .sorted { $0.confidence > $1.confidence } // Sort by confidence
+    }
+    
+    // MARK: - Mapping Helpers
+    private func mapToNutrient(_ identifier: String) -> String? {
+        let lowercased = identifier.lowercased()
+        
+        switch lowercased {
+        case "nitrogeno", "nitrogen":
+            return "nitrogen"
+        case "fosforo", "phosphorus":
+            return "phosphorus"
+        case "potasio", "potassium":
+            return "potassium"
+        case "calcio", "calcium":
+            return "calcium"
+        case "magnesio", "magnesium":
+            return "magnesium"
+        case "hierro", "iron":
+            return "iron"
+        case "manganeso", "manganese":
+            return "manganese"
+        case "zinc":
+            return "zinc"
+        case "azufre", "sulfur":
+            return "sulfur"
+        case "boro", "boron":
+            return "boron"
+        default:
+            return nil
+        }
+    }
+    
+    private func determineSeverity(confidence: Float) -> String {
+        switch confidence {
+        case 0.8...1.0:
+            return "severe"
+        case 0.5..<0.8:
+            return "moderate"
+        default:
+            return "mild"
+        }
+    }
+    
+    private func displayName(for identifier: String) -> String {
+        let lowercased = identifier.lowercased()
+        
+        switch lowercased {
+        case "saludable", "healthy":
+            return "Planta Saludable"
+        case "broca":
+            return "Plaga: Broca del Café"
+        case "roya":
+            return "Enfermedad: Roya del Café"
+        case "nitrogeno", "nitrogen":
+            return "Deficiencia de Nitrógeno"
+        case "fosforo", "phosphorus":
+            return "Deficiencia de Fósforo"
+        case "potasio", "potassium":
+            return "Deficiencia de Potasio"
+        case "calcio", "calcium":
+            return "Deficiencia de Calcio"
+        case "magnesio", "magnesium":
+            return "Deficiencia de Magnesio"
+        case "hierro", "iron":
+            return "Deficiencia de Hierro"
+        case "manganeso", "manganese":
+            return "Deficiencia de Manganeso"
+        case "zinc":
+            return "Deficiencia de Zinc"
+        case "azufre", "sulfur":
+            return "Deficiencia de Azufre"
+        case "boro", "boron":
+            return "Deficiencia de Boro"
+        default:
+            return "Deficiencia de \(identifier.capitalized)"
+        }
+    }
+    
+    // MARK: - Utility Methods
+    /// Maps detection state from confidence level
+    func detectionStateFromConfidence(_ confidence: Float) -> DetectionState {
+        return DetectionState.fromConfidence(confidence)
+    }
+    
+    /// Gets the primary deficiency from classification results
+    func getPrimaryDeficiency(from results: [ClassificationResult]) -> ClassificationResult? {
+        results.first { $0.identifier.lowercased() != "saludable" && $0.identifier.lowercased() != "healthy" }
+            ?? results.first
     }
 }
 
-enum DiagnosisError: Error, LocalizedError {
-    case invalidURL
-    case serverError
-    case decodingError
-    case networkError
+// MARK: - Plant Diagnostic Error
+enum PlantDiagnosticError: LocalizedError {
+    case modelNotLoaded
+    case invalidImage
+    case classificationFailed(Error)
+    case noResults
     
     var errorDescription: String? {
         switch self {
-        case .invalidURL: return "Invalid URL"
-        case .serverError: return "Server Error"
-        case .decodingError: return "Failed to decode response"
-        case .networkError: return "Network Error"
+        case .modelNotLoaded:
+            return "El modelo CoreML no está cargado"
+        case .invalidImage:
+            return "Imagen inválida"
+        case .classificationFailed(let error):
+            return "Fallo en la clasificación: \(error.localizedDescription)"
+        case .noResults:
+            return "No se obtuvieron resultados"
         }
     }
 }
