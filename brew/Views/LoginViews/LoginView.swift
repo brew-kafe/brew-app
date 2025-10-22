@@ -12,6 +12,7 @@ struct LoginView: View {
     @State private var password = ""
     @State private var showPassword = false
     @ObservedObject var authVM: AuthViewModel
+    @EnvironmentObject private var session: Session
     
     // Brew color palette - supports light and dark mode
     private let brewDarkBrown = Color(hex: "#403003")      // Dark brown
@@ -20,7 +21,7 @@ struct LoginView: View {
     private let brewTan = Color(hex: "#A69072")            // Tan/beige
     private let brewCream = Color(hex: "#E3DBC7")          // Cream
     private let brewWhite = Color(hex: "#F5F4EF")          // Off-white
-
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -138,7 +139,10 @@ struct LoginView: View {
                         // Login Button
                         Button(action: {
                             authVM.login(email: email, password: password)
-                        }) {
+                        }) { Label {
+                            
+                            //Aqui se define el log in que hara segun el rol del usuario
+                            
                             HStack(spacing: 12) {
                                 Text("Iniciar Sesión")
                                     .font(.system(size: 17, weight: .semibold))
@@ -159,58 +163,59 @@ struct LoginView: View {
                             .shadow(color: brewDarkBrown.opacity(0.3), radius: 8, x: 0, y: 4)
                         }
                         .padding(.top, 10)
-                        
-                        // Error Message
-                        if let error = authVM.errorMessage {
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 14))
-                                Text(error)
-                                    .font(.system(size: 14))
+                            
+                            // Error Message
+                            if let error = authVM.errorMessage {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.system(size: 14))
+                                    Text(error)
+                                        .font(.system(size: 14))
+                                }
+                                .foregroundColor(.red)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(Color.red.opacity(0.1))
+                                .cornerRadius(12)
                             }
-                            .foregroundColor(.red)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(12)
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    // MARK: - Register Link
-                    VStack(spacing: 16) {
-                        HStack(spacing: 12) {
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(brewTan.opacity(0.3))
-                            
-                            Text("o")
-                                .foregroundColor(.secondary)
-                                .font(.system(size: 14))
-                            
-                            Rectangle()
-                                .frame(height: 1)
-                                .foregroundColor(brewTan.opacity(0.3))
                         }
                         .padding(.horizontal, 20)
-                        .padding(.top, 30)
                         
-                        HStack(spacing: 4) {
-                            Text("¿No tienes cuenta?")
-                                .font(.system(size: 15))
-                                .foregroundColor(.secondary)
-                            
-                            NavigationLink(destination: RegisterView(authVM: authVM)) {
-                                Text("Regístrate ahora")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(brewOlive)
+                        // MARK: - Register Link
+                        VStack(spacing: 16) {
+                            HStack(spacing: 12) {
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(brewTan.opacity(0.3))
+                                
+                                Text("o")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 14))
+                                
+                                Rectangle()
+                                    .frame(height: 1)
+                                    .foregroundColor(brewTan.opacity(0.3))
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 30)
+                            
+                            HStack(spacing: 4) {
+                                Text("¿No tienes cuenta?")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.secondary)
+                                
+                                NavigationLink(destination: RegisterView(authVM: authVM)) {
+                                    Text("Regístrate ahora")
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundColor(brewOlive)
+                                }
+                            }
+                            .padding(.bottom, 40)
                         }
-                        .padding(.bottom, 40)
                     }
                 }
+                .background(Color(.systemBackground))
             }
-            .background(Color(.systemBackground))
         }
     }
 }

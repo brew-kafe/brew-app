@@ -17,6 +17,6 @@ nonisolated struct UserDTO: Codable, Identifiable {
     let date_joined: Date
     let cooperative_id: Int?
 
-    
+    let isAdmin: Bool?
     var id: UUID? { user_id }
 }

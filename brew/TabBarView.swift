@@ -7,58 +7,81 @@
 
 import SwiftUI
 
-struct TabBarView: View {
-    @EnvironmentObject private var locationsViewModel: LocationsViewModel
-    @EnvironmentObject private var reportsViewModel: ReportViewModel
-    
-    init() {
-        // Set the background color of the tab bar using a custom UIColor from hex
-        let appearance = UITabBarAppearance()
-        appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = UIColor(hex: "#403003")
-        
-        //Appearance of tab bar on scrollable and non-scrollable views
-        UITabBar.appearance().standardAppearance = appearance
-        UITabBar.appearance().scrollEdgeAppearance = appearance
-        
-        //Change color of unselected icon color and text
-        appearance.stackedLayoutAppearance.normal.iconColor = UIColor(hex: "#E3DBC7")
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(hex: "#E3DBC7")]
-    }
-    
-    var body: some View {
-        TabView {
-            NavigationStack {
-                HomeView()
-            }
-            .tabItem { Label("Inicio", systemImage: "house.fill") }
-            
-            NavigationStack {
-                ReportsView()
-            }
-            .tabItem { Label("Reporte", systemImage: "doc.text.fill")}
+struct TabItem: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let sf: String
+    let view: AnyView
+}
 
-            NavigationStack {
-                DiagnosticView()
-            }
-            .tabItem { Label("Diagnóstico", systemImage: "leaf.fill") }
-
-            NavigationStack {
-                LocationsView()
-                    .environmentObject(locationsViewModel)
-            }
-            .tabItem { Label("Mapa", systemImage: "map.fill") }
-
-            NavigationStack {
-                SettingsView()
-            }
-            .tabItem { Label("Ajustes", systemImage: "gearshape") }
-        }
-        .tint(Color(hex: "#737839"))
+func tabs(for role: UserRole) -> [TabItem] {
+    switch role {
+    case .admin:
+        return [
+            .init(id:"homeAdmin",  title:"Inicio",    sf:"house.fill",
+                  view: AnyView(HomeViewAdmin())),
+            .init(id:"report",     title:"Reporte",   sf:"doc.text.fill",
+                  view: AnyView(ReportsView())),
+            .init(id:"dashboard",  title:"Dashboard", sf:"rectangle.grid.2x2",
+                  view: AnyView(AdminDashboardView())),
+            .init(id:"map",        title:"Mapa",      sf:"map.fill",
+                  view: AnyView(LocationsView())),
+            .init(id:"settings",   title:"Ajustes",   sf:"gearshape",
+                  view: AnyView(SettingsView()))
+        ]
+    case .technician:
+        return [
+            .init(id:"home",       title:"Inicio",    sf:"house.fill",
+                  view: AnyView(HomeView())),
+            .init(id:"report",     title:"Reporte",   sf:"doc.text.fill",
+                  view: AnyView(ReportsView())),
+            .init(id:"diagnostic", title:"Diagnóstico", sf:"leaf.fill",
+                  view: AnyView(DiagnosticView())),
+            .init(id:"map",        title:"Mapa",      sf:"map.fill",
+                  view: AnyView(LocationsView())),
+            .init(id:"settings",   title:"Ajustes",   sf:"gearshape",
+                  view: AnyView(SettingsView()))
+        ]
     }
 }
 
-// Note: Color extensions moved to ColorExtensions.swift
+struct TabBarView: View {
+    @EnvironmentObject private var locationsViewModel: LocationsViewModel
+    @EnvironmentObject private var reportsViewModel: ReportViewModel
+    @EnvironmentObject private var session: Session
+
+    init() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor(hex: "#403003")
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+        appearance.stackedLayoutAppearance.normal.iconColor = UIColor(hex: "#E3DBC7")
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(hex: "#E3DBC7")]
+    }
+
+    var body: some View {
+        let items = tabs(for: session.role)
+        TabView(selection: $session.selectedTab) {
+            ForEach(items) { item in
+                NavigationStack {
+                    item.view
+                        .environmentObject(locationsViewModel)
+                        .environmentObject(reportsViewModel)
+                }
+                .tabItem { Label(item.title, systemImage: item.sf) }
+                .tag(item.id)
+            }
+        }
+        .tint(Color(hex: "#737839"))
+        .onAppear {
+            if !items.map(\.id).contains(session.selectedTab) {
+                session.selectedTab = items.first?.id ?? "home"
+            }
+        }
+    }
+}
+
 
 #Preview {
     TabBarView()

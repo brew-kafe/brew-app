@@ -15,6 +15,7 @@ class AuthViewModel: ObservableObject {
     @Published var isAuthenticated = false
     @Published var currentUser: UserDTO?
     @Published var errorMessage: String?
+    @Published var isAdmin: Bool = false
 
     private let api = APIService()
     
@@ -54,6 +55,7 @@ class AuthViewModel: ObservableObject {
                     self?.currentUser = user
                     self?.isAuthenticated = true
                     self?.errorMessage = nil
+                    self?.isAdmin = user.isAdmin ?? false
                 case .failure(let error):
                     self?.errorMessage = error.localizedDescription
                     self?.isAuthenticated = false
@@ -62,11 +64,6 @@ class AuthViewModel: ObservableObject {
         }
     }
     
-    private func checkAuthStatus() {
-        let isLoggedIn = UserDefaults.standard.bool(forKey: "isLoggedIn")
-        
-        if isLoggedIn {
-            self.isAuthenticated = true
-        }
+    
     }
 }
