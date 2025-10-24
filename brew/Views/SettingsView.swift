@@ -12,25 +12,24 @@ struct SettingsView: View {
     @State private var showingLanguageSelection = false
     
     var body: some View {
-        NavigationView {
-            List {
-                // MARK: - Profile
-                Section(header: Text(languageManager.localizedString("profile"))) {
-                    NavigationLink(destination: ProfileView()) {
-                        HStack {
-                            HStack(spacing: 10) {
-                                Image(systemName: "person.crop.circle.fill")
-                                    .foregroundColor(.brown)
-                                Text(languageManager.localizedString("edit_profile"))
-                                    .foregroundColor(.black)
-                            }
-                            Spacer()
-                                .foregroundColor(.gray)
+        List {
+            // MARK: - Profile
+            Section(header: Text(languageManager.localizedString("profile"))) {
+                NavigationLink(destination: ProfileView()) {
+                    HStack {
+                        HStack(spacing: 10) {
+                            Image(systemName: "person.crop.circle.fill")
+                                .foregroundColor(.brown)
+                            Text(languageManager.localizedString("edit_profile"))
+                                .foregroundColor(.black)
                         }
+                        Spacer()
+                            .foregroundColor(.gray)
                     }
                 }
-                
-                // MARK: - Notifications
+            }
+            
+            // MARK: - Notifications
                 Section(header: Text(languageManager.localizedString("notifications"))) {
                     Button(action: {
                         // Acción para alertas
@@ -147,12 +146,11 @@ struct SettingsView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
-            }
-            .navigationTitle(languageManager.localizedString("settings"))
-            .listSectionSpacing(15)
-            .sheet(isPresented: $showingLanguageSelection) {
-                LanguageSelectionView()
-            }
+        }
+        .navigationTitle(languageManager.localizedString("settings"))
+        .listSectionSpacing(15)
+        .sheet(isPresented: $showingLanguageSelection) {
+            LanguageSelectionView()
         }
     }
 }

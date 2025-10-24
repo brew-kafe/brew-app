@@ -235,11 +235,16 @@ struct DeficienciesSection: View {
 struct DeficiencyCard: View {
     let deficiency: ElementAnalysis
     
-    private func getDetectionColor(for state: DetectionState) -> Color {
-        switch state {
-        case .danger: return .red
-        case .moderate: return .orange
-        case .optimal: return .green
+    private func getDetectionColor(for state: String) -> Color {
+        switch state.lowercased() {
+        case "danger", "critical", "crítico":
+            return .red
+        case "moderate", "moderado":
+            return .orange
+        case "optimal", "óptimo":
+            return .green
+        default:
+            return .gray
         }
     }
     
@@ -251,7 +256,7 @@ struct DeficiencyCard: View {
                         .font(.headline)
                     
                     HStack(spacing: 8) {
-                        Text(deficiency.detectionState.displayName)
+                        Text(detectionStateDisplayName(deficiency.detectionState))
                             .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundColor(.white)
@@ -365,6 +370,20 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+// MARK: - Helper Functions
+private func detectionStateDisplayName(_ state: String) -> String {
+    switch state.lowercased() {
+    case "danger", "critical", "crítico":
+        return "Crítico"
+    case "moderate", "moderado":
+        return "Moderado"
+    case "optimal", "óptimo":
+        return "Óptimo"
+    default:
+        return state.capitalized
+    }
+}
+
 #Preview {
     DiagnosticDetailView(
         diagnosis: DiagnosisEntity(
@@ -381,7 +400,7 @@ struct ShareSheet: UIViewControllerRepresentable {
                 ElementAnalysis(
                     element: "Nitrogen", 
                     percentage: 85.0, 
-                    detectionState: .moderate, 
+                    detectionState: "moderate", 
                     deficiencyLevel: "Moderate", 
                     recommendations: ["Aplicar urea 46%"]
                 )
