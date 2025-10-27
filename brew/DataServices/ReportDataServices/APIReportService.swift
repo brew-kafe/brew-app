@@ -27,7 +27,52 @@ class APIReportService: ObservableObject {
         self.encoder.dateEncodingStrategy = .iso8601
         
         self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .iso8601
+        // Custom date decoder to handle API date format with microseconds (same as diagnosis service)
+        self.decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            // Try different date formats
+            let formatters: [DateFormatter] = [
+                // API format with microseconds: "2025-10-27T05:37:51.235170"
+                {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    return formatter
+                }(),
+                // Standard ISO8601 format: "2025-10-27T05:37:51Z"
+                {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    return formatter
+                }(),
+                // ISO8601 without Z: "2025-10-27T05:37:51"
+                {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    return formatter
+                }()
+            ]
+            
+            for formatter in formatters {
+                if let date = formatter.date(from: dateString) {
+                    return date
+                }
+            }
+            
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Cannot decode date string \(dateString). Expected formats: yyyy-MM-dd'T'HH:mm:ss.SSSSSS, yyyy-MM-dd'T'HH:mm:ss'Z', or yyyy-MM-dd'T'HH:mm:ss"
+                )
+            )
+        }
     }
     
     // MARK: - Create Report
@@ -40,12 +85,19 @@ class APIReportService: ObservableObject {
             throw APIReportError.invalidURL
         }
         
+        print("🚀 Creating report with URL: \(url)")
+        print("📝 Request data: \(request)")
+        
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
-            urlRequest.httpBody = try encoder.encode(request)
+            let requestBody = try encoder.encode(request)
+            urlRequest.httpBody = requestBody
+            
+            print("📤 Sending POST request to: \(url)")
+            print("📦 Request body: \(String(data: requestBody, encoding: .utf8) ?? "Could not decode")")
             
             let (data, response) = try await session.data(for: urlRequest)
             
@@ -53,14 +105,21 @@ class APIReportService: ObservableObject {
                 throw APIReportError.invalidResponse
             }
             
+            print("📥 Response status: \(httpResponse.statusCode)")
+            print("📄 Response data: \(String(data: data, encoding: .utf8) ?? "Could not decode")")
+            
             guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
                 throw APIReportError.serverError(statusCode: httpResponse.statusCode)
             }
             
-            return try decoder.decode(ReportAPIResponse.self, from: data)
+            let reportResponse = try decoder.decode(ReportAPIResponse.self, from: data)
+            print("✅ Successfully created report with ID: \(reportResponse.reportId)")
+            return reportResponse
         } catch let error as APIReportError {
+            print("❌ APIReportError: \(error)")
             throw error
         } catch {
+            print("❌ Network error: \(error)")
             throw APIReportError.networkError(error)
         }
     }

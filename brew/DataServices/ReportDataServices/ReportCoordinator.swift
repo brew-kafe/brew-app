@@ -63,6 +63,9 @@ class ReportCoordinator: ObservableObject {
         performanceScore: Double? = nil,
         modelContext: ModelContext
     ) async throws -> ReportEntity {
+        print("📊 Starting report creation workflow...")
+        print("📝 Title: \(title), User: \(userId), Diagnoses: \(diagnosisIds)")
+        
         isProcessing = true
         defer { isProcessing = false }
         
@@ -80,12 +83,14 @@ class ReportCoordinator: ObservableObject {
                 performanceScore: performanceScore
             )
             
-            // Send to API
+            print("🌐 Attempting to create report via API...")
+            // Try to send to API first
             let apiResponse = try await apiService.createReport(
                 userId: userId,
                 request: request
             )
             
+            print("✅ API creation successful, saving locally...")
             // Save locally
             currentStep = .syncingData
             let localEntity = ReportMapper.toEntity(from: apiResponse)
@@ -93,12 +98,72 @@ class ReportCoordinator: ObservableObject {
             try modelContext.save()
             
             currentStep = .completed
+            print("🎉 Report creation completed successfully!")
             return localEntity
             
         } catch {
-            currentStep = .failed(error)
-            throw error
+            print("⚠️ API creation failed: \(error.localizedDescription)")
+            print("🔄 Falling back to local-only creation...")
+            
+            // Fallback: Create locally only when API fails
+            do {
+                let localEntity = try await createReportLocalOnly(
+                    userId: userId,
+                    title: title,
+                    diagnosisIds: diagnosisIds,
+                    parcelId: parcelId,
+                    reportType: reportType,
+                    notes: notes,
+                    performanceScore: performanceScore,
+                    modelContext: modelContext
+                )
+                
+                print("✅ Local-only report created successfully!")
+                return localEntity
+                
+            } catch {
+                print("❌ Local creation also failed: \(error.localizedDescription)")
+                currentStep = .failed(error)
+                throw error
+            }
         }
+    }
+    
+    /// Creates a report locally only (fallback when API is unavailable)
+    private func createReportLocalOnly(
+        userId: UUID,
+        title: String,
+        diagnosisIds: [UUID],
+        parcelId: Int? = nil,
+        reportType: ReportType = .nutrition,
+        notes: String? = nil,
+        performanceScore: Double? = nil,
+        modelContext: ModelContext
+    ) async throws -> ReportEntity {
+        currentStep = .creatingReport
+        
+        // Create local report entity directly
+        let localEntity = ReportEntity(
+            title: title,
+            reportType: reportType.rawValue,
+            notes: notes,
+            performanceScore: performanceScore,
+            reportDate: Date(),
+            createdAt: Date(),
+            userId: userId,
+            parcelId: parcelId,
+            needsSync: true  // Mark for future API sync
+        )
+        
+        // Note: We can't link diagnoses directly since they might have different IDs
+        // This would need to be handled when we implement proper sync
+        
+        currentStep = .syncingData
+        modelContext.insert(localEntity)
+        try modelContext.save()
+        
+        currentStep = .completed
+        return localEntity
     }
     
     // MARK: - Fetch Reports

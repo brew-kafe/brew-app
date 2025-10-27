@@ -58,6 +58,15 @@ struct ReportsView: View {
                     Button(action: { showCreateSheet = true }) {
                         Label("Nuevo Reporte", systemImage: "plus")
                     }
+                    
+                    // Test button for debugging
+                    Button(action: {
+                        Task {
+                            await viewModel.testReportCreation(modelContext: modelContext)
+                        }
+                    }) {
+                        Label("Test Report Creation", systemImage: "testtube.2")
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }

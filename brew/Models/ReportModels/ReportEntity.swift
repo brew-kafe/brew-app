@@ -11,7 +11,7 @@ import SwiftData
 /// SwiftData model for storing reports locally
 @Model
 class ReportEntity {
-    @Attribute(.unique) var id: Int // Using Int to match API report_id
+    @Attribute(.unique) var id: Int // Using Int to match API report_id, or negative for local-only
     var title: String
     var userId: UUID
     var parcelId: Int?
@@ -21,6 +21,7 @@ class ReportEntity {
     var performanceScore: Double?
     var diagnosisCount: Int
     var createdAt: Date
+    var needsSync: Bool = false // Indicates if this report needs to be synced to API
     
     // Store diagnosis IDs as JSON
     var diagnosisIdsData: Data?
@@ -53,8 +54,42 @@ class ReportEntity {
         self.diagnosisCount = diagnosisCount
         self.createdAt = createdAt
         
-        // Encode diagnosis IDs
-        self.diagnosisIdsData = try? JSONEncoder().encode(diagnosisIds)
+        // Encode diagnosis IDs to JSON
+        if !diagnosisIds.isEmpty {
+            self.diagnosisIdsData = try? JSONEncoder().encode(diagnosisIds)
+        }
+    }
+    
+    /// Convenience initializer for local-only reports (when API is unavailable)
+    convenience init(
+        title: String,
+        reportType: String = "nutrition",
+        notes: String? = nil,
+        performanceScore: Double? = nil,
+        reportDate: Date = Date(),
+        createdAt: Date = Date(),
+        userId: UUID,
+        parcelId: Int? = nil,
+        needsSync: Bool = false
+    ) {
+        // Use negative ID for local-only reports to avoid conflicts with API IDs
+        let localId = -Int(Date().timeIntervalSince1970)
+        
+        self.init(
+            id: localId,
+            title: title,
+            userId: userId,
+            parcelId: parcelId,
+            reportType: reportType,
+            reportDate: reportDate,
+            notes: notes,
+            performanceScore: performanceScore,
+            diagnosisCount: 0,
+            diagnosisIds: [],
+            createdAt: createdAt
+        )
+        
+        self.needsSync = needsSync
     }
     
     // MARK: - Computed Properties

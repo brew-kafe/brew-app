@@ -24,7 +24,7 @@ class ReportViewModel: ObservableObject {
     private let apiService = APIReportService.shared
     
     // MARK: - User Data
-    var userId: UUID = UUID() // Should come from authentication
+    var userId: UUID = UUID(uuidString: "9d3e1b2f-3540-41f3-b08b-ebd9589fea61")! // Test user UUID
     
     // MARK: - Create Report
     /// Creates a new report linked to diagnoses
@@ -42,6 +42,9 @@ class ReportViewModel: ObservableObject {
             return
         }
         
+        print("📊 ReportViewModel: Starting report creation...")
+        print("📝 Title: '\(title)', Diagnoses: \(diagnosisIds.count)")
+        
         isProcessing = true
         errorMessage = nil
         successMessage = nil
@@ -58,16 +61,50 @@ class ReportViewModel: ObservableObject {
                 modelContext: modelContext
             )
             
+            print("✅ ReportViewModel: Report created successfully with ID: \(report.id)")
             successMessage = "Reporte creado exitosamente"
             
             // Refresh list
             await fetchReports(modelContext: modelContext)
             
         } catch {
+            print("❌ ReportViewModel: Error creating report: \(error.localizedDescription)")
             errorMessage = "Error al crear reporte: \(error.localizedDescription)"
         }
         
         isProcessing = false
+    }
+    
+    /// Test method to verify report creation with fallback
+    func testReportCreation(modelContext: ModelContext) async {
+        print("🧪 Starting report creation test...")
+        
+        // Get some diagnosis IDs from local diagnoses
+        do {
+            let descriptor = FetchDescriptor<DiagnosisEntity>()
+            let diagnoses = try modelContext.fetch(descriptor)
+            
+            if diagnoses.isEmpty {
+                print("❌ No diagnoses found for test")
+                errorMessage = "No diagnoses available for test"
+                return
+            }
+            
+            let diagnosisIds = Array(diagnoses.prefix(2).map { $0.id })
+            print("📋 Using \(diagnosisIds.count) diagnoses for test")
+            
+            await createReport(
+                title: "Test Report - \(Date().formatted())",
+                diagnosisIds: diagnosisIds,
+                reportType: .nutrition,
+                notes: "Auto-generated test report",
+                modelContext: modelContext
+            )
+            
+        } catch {
+            print("❌ Test failed: \(error.localizedDescription)")
+            errorMessage = "Test failed: \(error.localizedDescription)"
+        }
     }
     
     // MARK: - Fetch Reports
