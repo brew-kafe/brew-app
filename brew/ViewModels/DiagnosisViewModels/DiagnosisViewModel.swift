@@ -23,13 +23,69 @@ class DiagnosisViewModel: ObservableObject {
     @Published var processingStep: String = ""
     
     // MARK: - Services
-    private let coordinator = DiagnosisCoordinator.shared
+    let coordinator = DiagnosisCoordinator.shared
     private let apiService = APIDiagnosisService.shared
     private let coreMLService = PlantDiagnosticService.shared
     
+    @available(iOS 18.1, macOS 15.1, *)
+    private lazy var foundationService = FoundationModelsDiagnosisService.shared
+    
     // MARK: - User Data
-    var userId: String = "default_user_id" // Should come from authentication
-    var technicianName: String = "Técnico" // Should come from user profile
+    // Default values - will be overridden when called with proper user info
+    private var _userId: String = "9d0d1b33-7185-46c0-b07a-e0c0f68095be" // Test user UUID
+    private var _technicianName: String = "Test Technician"
+    
+    var userId: String { _userId }
+    var technicianName: String { _technicianName }
+    
+    init() {
+        print("🔧 DiagnosisViewModel initialized with userId: \(userId)")
+    }
+    
+    /// Update user information for diagnosis creation
+    func setUserInfo(userId: String, technicianName: String) {
+        self._userId = userId
+        self._technicianName = technicianName
+        print("🔄 Updated user info - userId: \(userId), technicianName: \(technicianName)")
+    }
+    
+    /// Test method to verify the complete diagnosis workflow
+    func testDiagnosisCreation(modelContext: ModelContext) async {
+        print("🧪 Starting diagnosis creation test...")
+        
+        // Create a dummy 1x1 red image for testing
+        let size = CGSize(width: 1, height: 1)
+        UIGraphicsBeginImageContext(size)
+        UIColor.red.setFill()
+        UIRectFill(CGRect(origin: .zero, size: size))
+        guard let testImage = UIGraphicsGetImageFromCurrentImageContext() else {
+            print("❌ Failed to create test image")
+            return
+        }
+        UIGraphicsEndImageContext()
+        
+        do {
+            let diagnosis = try await coordinator.performCompleteDiagnosis(
+                image: testImage,
+                userId: userId,
+                parcelName: "Test Parcel",
+                plantNumber: "001",
+                technicianName: technicianName,
+                modelContext: modelContext
+            )
+            
+            print("✅ Test diagnosis created successfully!")
+            print("📄 Diagnosis ID: \(diagnosis.id)")
+            print("🏥 Primary Deficiency: \(diagnosis.primaryDeficiency)")
+            
+            // Refresh list
+            await fetchDiagnoses(modelContext: modelContext)
+            
+        } catch {
+            print("❌ Test failed: \(error.localizedDescription)")
+            errorMessage = "Test failed: \(error.localizedDescription)"
+        }
+    }
     
     // MARK: - Image Selection
     func loadImage() async {
@@ -84,30 +140,65 @@ class DiagnosisViewModel: ObservableObject {
         isProcessing = false
     }
     
-    // MARK: - API Only Analysis
-    /// Example 2: API analysis only (for quick checks)
-    func analyzeWithAPI(
+    // MARK: - Foundation Models Analysis
+    /// Foundation Models AI analysis (replaces API analysis)
+    @available(iOS 18.1, macOS 15.1, *)
+    func analyzeWithFoundationModels(
         parcelName: String,
         plantNumber: String?
-    ) async -> PhotoAnalysisResponse? {
+    ) async -> AIGeneratedDiagnosis? {
         guard let image = selectedImage else {
             errorMessage = "No hay imagen seleccionada"
             return nil
         }
         
         isProcessing = true
-        processingStep = "Analizando con IA..."
+        defer { isProcessing = false }
+        processingStep = "Analizando con IA local..."
         
         do {
-            let result = try await coordinator.performAPIAnalysis(
-                image: image,
-                parcelName: parcelName,
-                plantNumber: plantNumber,
-                technicianName: technicianName
+            // First get CoreML results for initial analysis
+            let coreMLResults = try await coreMLService.classifyImage(image)
+            
+            // Use Foundation Models for comprehensive diagnosis
+            let diagnosis = try await foundationService.generateDiagnosis(
+                from: coreMLResults,
+                parcelInfo: "Parcela: \(parcelName)" + (plantNumber != nil ? ", Planta: \(plantNumber!)" : ""),
+                additionalNotes: ""
             )
             
             processingStep = "Análisis completado"
-            return result
+            successMessage = "Diagnóstico generado con IA local"
+            return diagnosis
+            
+        } catch {
+            errorMessage = "Error en análisis: \(error.localizedDescription)"
+            return nil
+        }
+    }
+    
+    // MARK: - Legacy API Analysis (Fallback)
+    /// Fallback method for older iOS versions - uses CoreML only
+    func analyzeWithAPI(
+        parcelName: String,
+        plantNumber: String?
+    ) async -> [ClassificationResult]? {
+        guard let image = selectedImage else {
+            errorMessage = "No hay imagen seleccionada"
+            return nil
+        }
+        
+        isProcessing = true
+        defer { isProcessing = false }
+        processingStep = "Analizando con IA local..."
+        
+        do {
+            // Use CoreML for analysis since API endpoint doesn't exist
+            let results = try await coreMLService.classifyImage(image)
+            
+            processingStep = "Análisis completado"
+            successMessage = "Análisis completado con IA local"
+            return results
             
         } catch {
             errorMessage = "Error en análisis: \(error.localizedDescription)"
@@ -174,7 +265,7 @@ class DiagnosisViewModel: ObservableObject {
     /// Fetch single diagnosis from API
     func fetchDiagnosisFromAPI(diagnosisId: String) async -> DiagnosisAPIResponse? {
         do {
-            return try await apiService.fetchDiagnosis(userId: userId, diagnosisId: diagnosisId)
+            return try await apiService.fetchDiagnosis(diagnosisId: diagnosisId)
         } catch {
             errorMessage = "Error al obtener diagnóstico: \(error.localizedDescription)"
             return nil
@@ -191,7 +282,6 @@ class DiagnosisViewModel: ObservableObject {
         
         do {
             try await coordinator.deleteDiagnosis(
-                userId: userId,
                 diagnosisId: diagnosisId,
                 entity: entity,
                 modelContext: modelContext
@@ -277,16 +367,29 @@ struct DiagnosisExampleView: View {
                     }
                     .disabled(viewModel.isProcessing || parcelName.isEmpty)
                     
-                    // API only
-                    Button("Solo Análisis API") {
-                        Task {
-                            _ = await viewModel.analyzeWithAPI(
-                                parcelName: parcelName,
-                                plantNumber: plantNumber.isEmpty ? nil : plantNumber
-                            )
+                    // Foundation Models Analysis (iOS 18.1+)
+                    if #available(iOS 18.1, macOS 15.1, *) {
+                        Button("Análisis con Foundation Models") {
+                            Task {
+                                _ = await viewModel.analyzeWithFoundationModels(
+                                    parcelName: parcelName,
+                                    plantNumber: plantNumber.isEmpty ? nil : plantNumber
+                                )
+                            }
                         }
+                        .disabled(viewModel.isProcessing || parcelName.isEmpty)
+                    } else {
+                        // Fallback for older iOS versions
+                        Button("Análisis Local (CoreML)") {
+                            Task {
+                                _ = await viewModel.analyzeWithAPI(
+                                    parcelName: parcelName,
+                                    plantNumber: plantNumber.isEmpty ? nil : plantNumber
+                                )
+                            }
+                        }
+                        .disabled(viewModel.isProcessing || parcelName.isEmpty)
                     }
-                    .disabled(viewModel.isProcessing || parcelName.isEmpty)
                     
                     // CoreML only
                     Button("Solo Análisis Local") {

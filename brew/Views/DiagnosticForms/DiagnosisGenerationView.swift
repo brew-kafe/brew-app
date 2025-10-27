@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import SwiftData
 
 @available(iOS 18.1, macOS 15.1, *)
 struct DiagnosisGenerationView: View {
@@ -19,6 +20,7 @@ struct DiagnosisGenerationView: View {
 
     @StateObject private var foundationService = FoundationModelsDiagnosisService.shared
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
 
     @State private var generatedDiagnosis: AIGeneratedDiagnosis?
     @State private var showError = false
@@ -460,51 +462,50 @@ struct DiagnosisGenerationView: View {
 
     private func saveDiagnosis() {
         guard let diagnosis = generatedDiagnosis else { return }
-
-        // Convert AIGeneratedDiagnosis to DiagnosisEntity
-        let entity = DiagnosisEntity(
-            parcelName: parcelName,
-            plantNumber: nil, // Could be added to the form if needed
-            technicianName: technicianName,
-            primaryDeficiency: diagnosis.primaryDeficiency,
-            deficiencyElement: diagnosis.deficiencyElement,
-            detectionState: diagnosis.detectionState,
-            aiConfidence: diagnosis.confidencePercentage / 100.0,
-            aiDescription: diagnosis.detailedDescription,
-            aiRecommendations: diagnosis.recommendations,
-            allElements: diagnosis.elementAnalysis.map { aiElement in
-                ElementAnalysis(
-                    element: aiElement.element,
-                    percentage: aiElement.percentage,
-                    detectionState: aiElement.detectionState,
-                    deficiencyLevel: aiElement.deficiencyLevel,
-                    recommendations: aiElement.recommendations
-                )
-            },
-            photoURLs: [], // Could save the captured image if needed
-            diagnosisDate: Date(),
-            createdAt: Date()
-        )
-
-        // Add to diagnosis list
-        diagnosisViewModel.diagnosesList.insert(entity, at: 0)
-
-        // Optionally, persist using AIDiagnosisDataService as well
-        if #available(iOS 18.1, *) {
+        
+        print("💾 Starting save diagnosis process...")
+        
+        Task {
             do {
-                try AIDiagnosisDataService.shared.saveDiagnosis(
-                    diagnosis,
+                // Use the complete workflow that saves to both API and local storage
+                let _ = try await diagnosisViewModel.coordinator.performCompleteDiagnosis(
+                    image: capturedImage,
+                    userId: diagnosisViewModel.userId,
                     parcelName: parcelName,
+                    plantNumber: nil, // Could be added to the form if needed
                     technicianName: technicianName,
-                    additionalNotes: additionalNotes.isEmpty ? nil : additionalNotes,
-                    photoUrls: []
+                    modelContext: modelContext
                 )
+                
+                print("✅ Diagnosis saved successfully!")
+                
+                // Refresh the diagnosis list
+                await diagnosisViewModel.fetchDiagnoses(modelContext: modelContext)
+                
+                // Optionally, persist using AIDiagnosisDataService as well for Foundation Models data
+                if #available(iOS 18.1, *) {
+                    do {
+                        try AIDiagnosisDataService.shared.saveDiagnosis(
+                            diagnosis,
+                            parcelName: parcelName,
+                            technicianName: technicianName,
+                            additionalNotes: additionalNotes.isEmpty ? nil : additionalNotes,
+                            photoUrls: []
+                        )
+                        print("✅ Also saved to AIDiagnosisDataService")
+                    } catch {
+                        print("⚠️ Failed to save to AIDiagnosisDataService: \(error)")
+                    }
+                }
+                
+                dismiss()
+                
             } catch {
-                print("Failed to save to AIDiagnosisDataService: \(error)")
+                print("❌ Error saving diagnosis: \(error)")
+                errorMessage = "Error saving diagnosis: \(error.localizedDescription)"
+                showError = true
             }
         }
-
-        dismiss()
     }
 }
 

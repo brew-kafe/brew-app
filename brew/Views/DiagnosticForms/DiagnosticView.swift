@@ -10,6 +10,7 @@ import SwiftData
 
 struct DiagnosticView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var authVM: AuthViewModel
     @StateObject var viewModel = DiagnosisViewModel()
     @State private var showCamera = false
     @State private var selectedDiagnosis: DiagnosisEntity?
@@ -29,20 +30,33 @@ struct DiagnosticView: View {
             if viewModel.isProcessing {
                 analyzingOverlay
             }
-            .navigationTitle("Diagnósticos")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    // Camera Button
-                    Button(action: {
-                        showCamera = true
-                    }) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 30))
-                            .foregroundColor(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255))
-                    }
-                    .accessibilityLabel("Abrir cámara para diagnóstico")
+        }
+        .navigationTitle("Diagnósticos")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                // Camera Button
+                Button(action: {
+                    showCamera = true
+                }) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(Color(red: 88 / 255, green: 92 / 255, blue: 48 / 255))
                 }
                 .accessibilityLabel("Abrir cámara para diagnóstico")
+            }
+            
+            ToolbarItem(placement: .navigationBarLeading) {
+                // Test Button (for debugging)
+                Button(action: {
+                    Task {
+                        await viewModel.testDiagnosisCreation(modelContext: modelContext)
+                    }
+                }) {
+                    Image(systemName: "testtube.2")
+                        .font(.system(size: 20))
+                        .foregroundColor(.blue)
+                }
+                .accessibilityLabel("Test diagnosis creation")
             }
         }
         .sheet(isPresented: $showCamera) {
@@ -68,6 +82,10 @@ struct DiagnosticView: View {
             Text("¿Estás seguro de que deseas eliminar este diagnóstico? Esta acción no se puede deshacer.")
         }
         .task {
+            // Set user info from authenticated user
+            if let user = authVM.currentUser, let userUUID = user.user_id {
+                viewModel.setUserInfo(userId: userUUID.uuidString, technicianName: user.name)
+            }
             await viewModel.fetchDiagnoses(modelContext: modelContext)
         }
     }

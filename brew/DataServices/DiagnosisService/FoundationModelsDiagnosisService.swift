@@ -14,65 +14,65 @@ import UIKit
 @available(iOS 18.1, macOS 15.1, *)
 @Generable
 struct AIGeneratedDiagnosis: Codable {
-    @Guide(description: "A comprehensive title for the plant diagnosis")
+    @Guide(description: "Un título comprensivo para el diagnóstico de la planta")
     let title: String
     
-    @Guide(description: "A detailed description of the plant's current health condition based on the photo analysis")
+    @Guide(description: "Una descripción detallada de la condición actual de salud de la planta basada en el análisis de la foto")
     let detailedDescription: String
     
-    @Guide(description: "The primary nutritional deficiency detected")
+    @Guide(description: "La deficiencia nutricional principal detectada")
     let primaryDeficiency: String
     
-    @Guide(description: "The specific nutrient element that is deficient")
+    @Guide(description: "El elemento nutriente específico que está deficiente")
     let deficiencyElement: String
     
-    @Guide(description: "Overall health assessment")
+    @Guide(description: "Evaluación general de salud")
     @Guide(.anyOf(["danger", "moderate", "optimal"]))
     let detectionState: String
     
-    @Guide(description: "AI confidence level as a percentage (0-100)")
+    @Guide(description: "Nivel de confianza de la IA como porcentaje (0-100)")
     let confidencePercentage: Double
     
-    @Guide(description: "List of detailed recommendations for treatment")
+    @Guide(description: "Lista de recomendaciones detalladas para el tratamiento")
     @Guide(.count(3...6))
     let recommendations: [String]
     
-    @Guide(description: "Analysis of different nutritional elements")
+    @Guide(description: "Análisis de diferentes elementos nutricionales")
     @Guide(.count(5...8))
     let elementAnalysis: [ElementAnalysisAI]
     
-    @Guide(description: "Immediate actions that should be taken")
+    @Guide(description: "Acciones inmediatas que deben tomarse")
     @Guide(.count(2...4))
     let immediateActions: [String]
     
-    @Guide(description: "Long-term care plan recommendations")
+    @Guide(description: "Recomendaciones del plan de cuidado a largo plazo")
     @Guide(.count(2...3))
     let longTermCare: [String]
     
-    @Guide(description: "Expected recovery timeframe")
+    @Guide(description: "Tiempo de recuperación esperado")
     let expectedRecoveryTime: String
     
-    @Guide(description: "Risk assessment and potential complications")
+    @Guide(description: "Evaluación de riesgo y complicaciones potenciales")
     let riskAssessment: String
 }
 
 @available(iOS 18.1, macOS 15.1, *)
 @Generable
 struct ElementAnalysisAI: Codable {
-    @Guide(description: "The nutrient element name (e.g., Nitrogen, Phosphorus, Potassium)")
+    @Guide(description: "El nombre del elemento nutriente (ej. Nitrógeno, Fósforo, Potasio)")
     let element: String
     
-    @Guide(description: "Estimated percentage level (0-100)")
+    @Guide(description: "Nivel porcentual estimado (0-100)")
     let percentage: Double
     
-    @Guide(description: "Detection state for this element")
+    @Guide(description: "Estado de detección para este elemento")
     @Guide(.anyOf(["danger", "moderate", "optimal"]))
     let detectionState: String
     
-    @Guide(description: "Specific deficiency level description")
+    @Guide(description: "Descripción específica del nivel de deficiencia")
     let deficiencyLevel: String
     
-    @Guide(description: "Element-specific recommendations")
+    @Guide(description: "Recomendaciones específicas del elemento")
     @Guide(.count(1...3))
     let recommendations: [String]
     
@@ -132,7 +132,7 @@ class FoundationModelsDiagnosisService: ObservableObject {
 
         switch model.availability {
         case .available:
-            return "Foundation Models ready for on-device diagnosis generation"
+            return "Foundation Models listo para generación de diagnósticos en dispositivo"
         case .unavailable(.deviceNotEligible):
             return """
             Este dispositivo no es compatible con Apple Intelligence.
@@ -362,19 +362,19 @@ class FoundationModelsDiagnosisService: ObservableObject {
         
         return Prompt {
             """
-            Please analyze this coffee plant and provide a comprehensive diagnosis.
+            Por favor analiza esta planta de café y proporciona un diagnóstico comprensivo.
             
-            PHOTO ANALYSIS RESULTS:
+            RESULTADOS DEL ANÁLISIS FOTOGRÁFICO:
             \(analysisResults)
             
-            PARCEL INFORMATION:
+            INFORMACIÓN DE LA PARCELA:
             \(parcelInfo)
             
-            ADDITIONAL OBSERVATIONS:
-            \(additionalNotes.isEmpty ? "None provided" : additionalNotes)
+            OBSERVACIONES ADICIONALES:
+            \(additionalNotes.isEmpty ? "Ninguna proporcionada" : additionalNotes)
             
-            Please provide a detailed diagnosis with specific recommendations for treatment and recovery.
-            Focus on the most likely nutritional deficiencies and provide actionable advice for coffee farmers.
+            Por favor proporciona un diagnóstico detallado con recomendaciones específicas para el tratamiento y recuperación.
+            Enfócate en las deficiencias nutricionales más probables y proporciona consejos accionables para los caficultores.
             """
         }
     }
@@ -405,11 +405,11 @@ enum DiagnosisGenerationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .modelNotAvailable:
-            return "Foundation Models not available on this device"
+            return "Foundation Models no disponible en este dispositivo"
         case .incompleteGeneration:
-            return "Diagnosis generation was incomplete"
+            return "La generación del diagnóstico fue incompleta"
         case .invalidPhotoAnalysis:
-            return "Invalid photo analysis results"
+            return "Resultados de análisis fotográfico inválidos"
         case .inferenceContextFailed:
             return """
             Apple Intelligence no puede ejecutarse en este dispositivo.

@@ -10,7 +10,7 @@ import UIKit
 
 // MARK: - API Configuration
 struct APIConfiguration {
-    static let baseURL = "http://127.0.0.1:8000/api"
+    static let baseURL = "https://brew-api-production.up.railway.app/api"
     static let timeout: TimeInterval = 30
 }
 
@@ -32,11 +32,58 @@ class APIDiagnosisService: ObservableObject {
         self.encoder.dateEncodingStrategy = .iso8601
         
         self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .iso8601
+        // Custom date decoder to handle API date format with microseconds
+        self.decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let dateString = try container.decode(String.self)
+            
+            // Try different date formats
+            let formatters: [DateFormatter] = [
+                // API format with microseconds: "2025-10-27T05:37:51.235170"
+                {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSS"
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    return formatter
+                }(),
+                // Standard ISO8601 format: "2025-10-27T05:37:51Z"
+                {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    return formatter
+                }(),
+                // ISO8601 without Z: "2025-10-27T05:37:51"
+                {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+                    formatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.timeZone = TimeZone(secondsFromGMT: 0)
+                    return formatter
+                }()
+            ]
+            
+            for formatter in formatters {
+                if let date = formatter.date(from: dateString) {
+                    return date
+                }
+            }
+            
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: decoder.codingPath,
+                    debugDescription: "Cannot decode date string \(dateString). Expected formats: yyyy-MM-dd'T'HH:mm:ss.SSSSSS, yyyy-MM-dd'T'HH:mm:ss'Z', or yyyy-MM-dd'T'HH:mm:ss"
+                )
+            )
+        }
     }
     
-    // MARK: - Photo Analysis
+    // MARK: - Photo Analysis (DISABLED - endpoint doesn't exist)
     /// Analyzes a plant photo using the backend AI model
+    /// NOTE: This endpoint doesn't exist in the current API, keeping for future implementation
+    /*
     func analyzePhoto(
         image: UIImage,
         parcelName: String,
@@ -81,23 +128,30 @@ class APIDiagnosisService: ObservableObject {
             throw APIDiagnosisError.networkError(error)
         }
     }
+    */
     
     // MARK: - Create Diagnosis
     /// Creates a diagnosis record in the backend database
     func createDiagnosis(
-        userId: String,
         request: DiagnosisCreateAPIRequest
     ) async throws -> DiagnosisAPIResponse {
-        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses") else {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/") else {
             throw APIDiagnosisError.invalidURL
         }
+        
+        print("🚀 Creating diagnosis with URL: \(url)")
+        print("📝 Request data: \(request)")
         
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         do {
-            urlRequest.httpBody = try encoder.encode(request)
+            let requestBody = try encoder.encode(request)
+            urlRequest.httpBody = requestBody
+            
+            print("📤 Sending POST request to: \(url)")
+            print("📦 Request body: \(String(data: requestBody, encoding: .utf8) ?? "Could not decode")")
             
             let (data, response) = try await session.data(for: urlRequest)
             
@@ -105,14 +159,21 @@ class APIDiagnosisService: ObservableObject {
                 throw APIDiagnosisError.invalidResponse
             }
             
+            print("📥 Response status: \(httpResponse.statusCode)")
+            print("📄 Response data: \(String(data: data, encoding: .utf8) ?? "Could not decode")")
+            
             guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
                 throw APIDiagnosisError.serverError(statusCode: httpResponse.statusCode)
             }
             
-            return try decoder.decode(DiagnosisAPIResponse.self, from: data)
+            let diagnosisResponse = try decoder.decode(DiagnosisAPIResponse.self, from: data)
+            print("✅ Successfully created diagnosis with ID: \(diagnosisResponse.id)")
+            return diagnosisResponse
         } catch let error as APIDiagnosisError {
+            print("❌ APIDiagnosisError: \(error)")
             throw error
         } catch {
+            print("❌ Network error: \(error)")
             throw APIDiagnosisError.networkError(error)
         }
     }
@@ -120,7 +181,7 @@ class APIDiagnosisService: ObservableObject {
     // MARK: - Fetch Diagnoses
     /// Fetches all diagnoses for a specific user
     func fetchDiagnoses(userId: String) async throws -> [DiagnosisAPIResponse] {
-        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses") else {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/user/\(userId)") else {
             throw APIDiagnosisError.invalidURL
         }
         
@@ -145,8 +206,8 @@ class APIDiagnosisService: ObservableObject {
     
     // MARK: - Fetch Single Diagnosis
     /// Fetches a specific diagnosis by ID
-    func fetchDiagnosis(userId: String, diagnosisId: String) async throws -> DiagnosisAPIResponse {
-        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses/\(diagnosisId)") else {
+    func fetchDiagnosis(diagnosisId: String) async throws -> DiagnosisAPIResponse {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/\(diagnosisId)") else {
             throw APIDiagnosisError.invalidURL
         }
         
@@ -171,8 +232,8 @@ class APIDiagnosisService: ObservableObject {
     
     // MARK: - Delete Diagnosis
     /// Deletes a diagnosis from the backend
-    func deleteDiagnosis(userId: String, diagnosisId: String) async throws {
-        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/users/\(userId)/diagnoses/\(diagnosisId)") else {
+    func deleteDiagnosis(diagnosisId: String) async throws {
+        guard let url = URL(string: "\(APIConfiguration.baseURL)/diagnosis/\(diagnosisId)") else {
             throw APIDiagnosisError.invalidURL
         }
         
